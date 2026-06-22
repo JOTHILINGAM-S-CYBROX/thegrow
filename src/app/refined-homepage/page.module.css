@@ -1,0 +1,18 @@
+
+        .materialSymbolsOutlined  {
+            font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
+        }
+        .glassNav  {
+            background: rgba(253, 250, 243, 0.9);
+            backdrop-filter: blur(15px);
+        }
+        .editorialShadow  {
+            box-shadow: 0 20px 50px rgba(10, 31, 20, 0.08);
+        }
+        .kerningLoose  {
+            letter-spacing: 0.25em;
+        }
+        .borderGold  {
+            border-color: #c5a059;
+        }
+    
