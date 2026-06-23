@@ -7,7 +7,59 @@ import styles from './page.module.css';
 export default function Page() {
   const [settings, setSettings] = useState({ tableBookingEnabled: true, loading: false });
   const [step, setStep] = useState(1);
-  const [selectedDate, setSelectedDate] = useState(4);
+  
+  const today = new Date();
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth());
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [selectedDate, setSelectedDate] = useState(today.getDate());
+  const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
+  const [selectedYear, setSelectedYear] = useState(today.getFullYear());
+
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  const handlePrevMonth = () => {
+    if (currentYear === today.getFullYear() && currentMonth <= today.getMonth()) return;
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(prev => prev - 1);
+    } else {
+      setCurrentMonth(prev => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(prev => prev + 1);
+    } else {
+      setCurrentMonth(prev => prev + 1);
+    }
+  };
+
+  const isPastDate = (day) => {
+    if (currentYear < today.getFullYear()) return true;
+    if (currentYear === today.getFullYear() && currentMonth < today.getMonth()) return true;
+    if (currentYear === today.getFullYear() && currentMonth === today.getMonth() && day < today.getDate()) return true;
+    return false;
+  };
+
+  const isToday = (day) => {
+    return currentYear === today.getFullYear() && currentMonth === today.getMonth() && day === today.getDate();
+  };
+  
+  const isSelected = (day) => {
+    return selectedYear === currentYear && selectedMonth === currentMonth && selectedDate === day;
+  };
+  
+  const handleSelectDate = (day) => {
+    setSelectedDate(day);
+    setSelectedMonth(currentMonth);
+    setSelectedYear(currentYear);
+  };
+
   const [selectedTime, setSelectedTime] = useState('19:30');
   
   const [partySize, setPartySize] = useState(2);
@@ -39,6 +91,15 @@ export default function Page() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    const selectedDateObj = new Date(selectedYear, selectedMonth, selectedDate);
+    const todayObj = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    
+    if (selectedDateObj < todayObj) {
+      alert("Cannot book a past date. Please select a valid date.");
+      return;
+    }
+
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
@@ -115,12 +176,17 @@ export default function Page() {
                 {step === 1 && (
                 <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-xl font-serif">October 2024</h3>
+                    <h3 className="text-xl font-serif">{monthNames[currentMonth]} {currentYear}</h3>
                     <div className="flex gap-4">
-                      <button className="p-2 hover:bg-surface-container transition-colors rounded-full" type="button">
+                      <button 
+                        className={`p-2 transition-colors rounded-full ${currentYear === today.getFullYear() && currentMonth <= today.getMonth() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface-container'}`} 
+                        type="button"
+                        onClick={handlePrevMonth}
+                        disabled={currentYear === today.getFullYear() && currentMonth <= today.getMonth()}
+                      >
                         <span className={`   material-symbols-outlined ${styles.materialSymbolsOutlined}`}>chevron_left</span>
                       </button>
-                      <button className="p-2 hover:bg-surface-container transition-colors rounded-full" type="button">
+                      <button className="p-2 hover:bg-surface-container transition-colors rounded-full" type="button" onClick={handleNextMonth}>
                         <span className={`   material-symbols-outlined ${styles.materialSymbolsOutlined}`}>chevron_right</span>
                       </button>
                     </div>
@@ -135,17 +201,26 @@ export default function Page() {
                     <div className="text-center text-[10px] font-label uppercase tracking-tighter text-outline pb-4">Fri</div>
                     <div className="text-center text-[10px] font-label uppercase tracking-tighter text-outline pb-4">Sat</div>
 
-                    <div className="aspect-square"></div>
-                    <div className="aspect-square"></div>
-                    {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                      <div 
-                        key={day}
-                        onClick={() => setSelectedDate(day)}
-                        className={`aspect-square flex items-center justify-center text-sm font-medium cursor-pointer rounded-lg transition-all ${selectedDate === day ? 'bg-primary text-on-primary shadow-lg scale-105' : 'hover:bg-surface-container'}`}
-                      >
-                        {day}
-                      </div>
+                    {Array.from({ length: firstDayOfMonth }, (_, i) => (
+                      <div key={`padding-${i}`} className="aspect-square"></div>
                     ))}
+                    {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
+                      const pastDate = isPastDate(day);
+                      const todayDate = isToday(day);
+                      return (
+                        <div 
+                          key={day}
+                          onClick={() => !pastDate && handleSelectDate(day)}
+                          className={`aspect-square flex items-center justify-center text-sm font-medium rounded-lg transition-all 
+                            ${pastDate ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
+                            ${isSelected(day) ? 'bg-primary text-on-primary shadow-lg scale-105' : (!pastDate ? 'hover:bg-surface-container' : '')}
+                            ${todayDate && !isSelected(day) ? 'ring-2 ring-primary ring-inset' : ''}
+                          `}
+                        >
+                          {day}
+                        </div>
+                      )
+                    })}
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {['18:30', '19:00', '19:30', '20:00', '20:30', '21:00'].map(time => (
@@ -211,7 +286,7 @@ export default function Page() {
                     <span className="material-symbols-outlined text-6xl text-emerald-600 mb-6">check_circle</span>
                     <h2 className="text-3xl font-serif text-emerald-900 mb-4 italic">Reservation Confirmed</h2>
                     <p className="text-emerald-800 leading-relaxed mb-8 max-w-md mx-auto">
-                      Thank you, {name}. Your table for {partySize} on October {selectedDate} at {selectedTime} has been reserved. A confirmation email has been sent to {email}.
+                      Thank you, {name}. Your table for {partySize} on {monthNames[selectedMonth]} {selectedDate}, {selectedYear} at {selectedTime} has been reserved. A confirmation email has been sent to {email}.
                     </p>
                     <button onClick={() => { setStep(1); setName(''); setEmail(''); setPhone(''); setSpecialRequests(''); setPartySize(2); }} className="text-sm font-label uppercase tracking-widest text-emerald-700 hover:text-emerald-900 underline underline-offset-4 transition-colors" type="button">
                       Make Another Reservation

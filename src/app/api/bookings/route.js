@@ -85,6 +85,22 @@ export async function POST(request) {
       );
     }
 
+    // Validate past dates
+    const selectedDateObj = new Date(body.eventDate);
+    selectedDateObj.setHours(0, 0, 0, 0);
+    const todayObj = new Date();
+    todayObj.setHours(0, 0, 0, 0);
+
+    if (selectedDateObj < todayObj) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Booking creation failed: Event date cannot be in the past',
+        },
+        { status: 400 }
+      );
+    }
+
     if (!body.customerInfo?.phone) {
       return NextResponse.json(
         { success: false, error: 'Customer phone number is required' },

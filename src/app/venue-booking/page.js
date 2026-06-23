@@ -13,7 +13,59 @@ export default function Page() {
 
   const [settings, setSettings] = useState({ eventBookingEnabled: true, loading: false });
 
-  const [selectedDate, setSelectedDate] = useState(6);
+  const today = new Date();
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth());
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [selectedDate, setSelectedDate] = useState(today.getDate());
+  const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
+  const [selectedYear, setSelectedYear] = useState(today.getFullYear());
+
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  const handlePrevMonth = () => {
+    if (currentYear === today.getFullYear() && currentMonth <= today.getMonth()) return;
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(prev => prev - 1);
+    } else {
+      setCurrentMonth(prev => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(prev => prev + 1);
+    } else {
+      setCurrentMonth(prev => prev + 1);
+    }
+  };
+
+  const isPastDate = (day) => {
+    if (currentYear < today.getFullYear()) return true;
+    if (currentYear === today.getFullYear() && currentMonth < today.getMonth()) return true;
+    if (currentYear === today.getFullYear() && currentMonth === today.getMonth() && day < today.getDate()) return true;
+    return false;
+  };
+
+  const isToday = (day) => {
+    return currentYear === today.getFullYear() && currentMonth === today.getMonth() && day === today.getDate();
+  };
+  
+  const isSelected = (day) => {
+    return selectedYear === currentYear && selectedMonth === currentMonth && selectedDate === day;
+  };
+  
+  const handleSelectDate = (day) => {
+    setSelectedDate(day);
+    setSelectedMonth(currentMonth);
+    setSelectedYear(currentYear);
+  };
+
   const [selectedTime, setSelectedTime] = useState('06:00 PM');
   const [customTime, setCustomTime] = useState('');
   const [name, setName] = useState('');
@@ -44,6 +96,16 @@ export default function Page() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Validate past dates
+    const selectedDateObj = new Date(selectedYear, selectedMonth, selectedDate);
+    const todayObj = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    
+    if (selectedDateObj < todayObj) {
+      alert("Cannot book a past date. Please select a valid date.");
+      return;
+    }
+
     setIsSubmitting(true);
     // Simulate API call
     setTimeout(() => {
@@ -211,37 +273,53 @@ export default function Page() {
           </div>
         </section>
 
-        <section className="py-32 px-12 max-w-6xl mx-auto">
-          <div className="flex flex-col lg:flex-row gap-20">
+        <section className="py-16 md:py-32 px-4 sm:px-8 lg:px-12 max-w-6xl mx-auto">
+          <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
 
-            <div className="lg:w-1/2">
-              <h2 className="font-headline text-[clamp(2rem,4vw,4rem)] mb-6">Select a Date</h2>
-              <div className="bg-surface-container p-8 rounded shadow-sm border border-outline-variant/10">
-                <div className="flex justify-between items-center mb-8">
-                  <span className="font-label font-semibold text-lg">November 2024</span>
+            <div className="w-full lg:w-1/2">
+              <h2 className="font-headline text-3xl md:text-5xl lg:text-[64px] leading-tight mb-6 lg:mb-8">Select a Date</h2>
+              <div className="bg-surface-container p-4 sm:p-6 md:p-8 rounded shadow-sm border border-outline-variant/10 w-full overflow-hidden">
+                <div className="flex justify-between items-center mb-6 md:mb-8">
+                  <span className="font-label font-semibold text-lg">{monthNames[currentMonth]} {currentYear}</span>
                   <div className="flex gap-4">
-                    <button className="p-2 hover:bg-surface-variant rounded-full"><span className={`   material-symbols-outlined ${styles.materialSymbolsOutlined}`}>chevron_left</span></button>
-                    <button className="p-2 hover:bg-surface-variant rounded-full"><span className={`   material-symbols-outlined ${styles.materialSymbolsOutlined}`}>chevron_right</span></button>
+                    <button 
+                      type="button"
+                      onClick={handlePrevMonth}
+                      disabled={currentYear === today.getFullYear() && currentMonth <= today.getMonth()}
+                      className={`p-2 rounded-full ${currentYear === today.getFullYear() && currentMonth <= today.getMonth() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface-variant'}`}
+                    >
+                      <span className={`   material-symbols-outlined ${styles.materialSymbolsOutlined}`}>chevron_left</span>
+                    </button>
+                    <button type="button" onClick={handleNextMonth} className="p-2 hover:bg-surface-variant rounded-full">
+                      <span className={`   material-symbols-outlined ${styles.materialSymbolsOutlined}`}>chevron_right</span>
+                    </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-7 gap-2 text-center text-xs font-label uppercase tracking-widest text-on-surface-variant mb-4">
+                <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[10px] md:text-xs font-label uppercase tracking-widest text-on-surface-variant mb-4">
                   <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
                 </div>
-                <div className="grid grid-cols-7 gap-2 text-center font-medium">
-                  {[27, 28, 29, 30, 31].map(day => (
-                    <span key={`prev-${day}`} className="p-3 text-outline/30">{day}</span>
-                  ))}
-                  {Array.from({ length: 30 }, (_, i) => i + 1).map(day => {
+                <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center font-medium">
+                  {Array.from({ length: firstDayOfMonth }, (_, i) => {
+                    const prevDay = daysInPrevMonth - firstDayOfMonth + i + 1;
+                    return (
+                      <span key={`prev-${prevDay}`} className="flex items-center justify-center min-w-[40px] min-h-[44px] md:min-w-[44px] w-full aspect-square text-outline/30 cursor-not-allowed">{prevDay}</span>
+                    );
+                  })}
+                  {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
                     const isFullyBooked = fullyBookedDates.includes(day);
+                    const pastDate = isPastDate(day);
+                    const isDisabled = isFullyBooked || pastDate;
+                    const todayDate = isToday(day);
                     return (
                       <span 
                         key={day} 
-                        onClick={() => !isFullyBooked && setSelectedDate(day)}
-                        className={`p-3 rounded transition-colors relative
-                          ${isFullyBooked ? 'text-outline/40 cursor-not-allowed bg-surface-container-lowest line-through' : 
-                            selectedDate === day ? 'bg-secondary text-on-secondary cursor-pointer' : 
+                        onClick={() => !isDisabled && handleSelectDate(day)}
+                        className={`flex items-center justify-center min-w-[40px] min-h-[44px] md:min-w-[44px] w-full aspect-square rounded transition-colors relative
+                          ${isDisabled ? 'text-outline/40 cursor-not-allowed bg-surface-container-lowest ' + (isFullyBooked ? 'line-through' : '') : 
+                            isSelected(day) ? 'bg-secondary text-on-secondary cursor-pointer' : 
                             'hover:bg-primary hover:text-on-primary cursor-pointer'
                           }
+                          ${todayDate && !isSelected(day) ? 'ring-2 ring-primary ring-inset' : ''}
                         `}
                       >
                         {day}
@@ -251,14 +329,14 @@ export default function Page() {
                 </div>
                 <div className="mt-8 pt-8 border-t border-outline-variant/20">
                   <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-4">Available Times</p>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                     {getAvailableTimes(selectedDate).map(({time, isBooked}) => (
                       <button 
                         key={time}
                         type="button"
                         disabled={isBooked}
                         onClick={() => setSelectedTime(time)}
-                        className={`px-4 py-2 rounded text-sm transition-all 
+                        className={`w-full min-h-[48px] px-4 py-2 rounded text-sm transition-all flex items-center justify-center text-center
                           ${isBooked ? 'border border-outline/20 text-outline/40 cursor-not-allowed bg-surface-container-lowest line-through' :
                             selectedTime === time ? 'bg-primary-container text-on-primary-container font-medium' : 
                             'border border-outline hover:bg-primary hover:text-on-primary'
@@ -286,18 +364,18 @@ export default function Page() {
               </div>
             </div>
 
-            <div className="lg:w-1/2">
-              <h2 className="font-headline text-[clamp(2rem,4vw,4rem)] mb-6">Booking Details</h2>
+            <div className="w-full lg:w-1/2 pb-12 md:pb-0">
+              <h2 className="font-headline text-3xl md:text-5xl lg:text-[64px] leading-tight mb-6 lg:mb-8">Booking Details</h2>
               {isSuccess ? (
-                <div className="bg-emerald-50 text-emerald-800 p-8 rounded-lg shadow-sm text-center">
+                <div className="bg-emerald-50 text-emerald-800 p-6 md:p-8 rounded-lg shadow-sm text-center">
                   <span className="material-symbols-outlined text-5xl mb-4">check_circle</span>
                   <h3 className="text-2xl font-headline mb-2">Inquiry Submitted</h3>
-                  <p className="text-emerald-700">Thank you, {name}. Your booking inquiry for {eventType} on November {selectedDate} at {selectedTime === 'Custom Timing' ? customTime : selectedTime} has been received. Our concierge will contact you shortly.</p>
+                  <p className="text-emerald-700">Thank you, {name}. Your booking inquiry for {eventType} on {monthNames[selectedMonth]} {selectedDate}, {selectedYear} at {selectedTime === 'Custom Timing' ? customTime : selectedTime} has been received. Our concierge will contact you shortly.</p>
                   <button onClick={() => setIsSuccess(false)} className="mt-6 text-sm font-label uppercase tracking-widest underline">Submit another inquiry</button>
                 </div>
               ) : (
-              <form className="space-y-8" onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <form className="space-y-6 md:space-y-8 pb-safe" onSubmit={handleSubmit}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                   <div>
                     <label className="block text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Full Name</label>
                     <input required value={name} onChange={e => setName(e.target.value)} className="w-full bg-transparent border-0 border-b border-outline focus:ring-0 focus:border-primary py-3 px-0" placeholder="Jane Doe" type="text" />
@@ -348,7 +426,7 @@ export default function Page() {
                     </>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                   <div>
                     <label className="block text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Guest Count</label>
                     <input value={guestCount} onChange={e => setGuestCount(e.target.value)} className="w-full bg-transparent border-0 border-b border-outline focus:ring-0 focus:border-primary py-3 px-0" placeholder="20" type="number" min="1" required />
