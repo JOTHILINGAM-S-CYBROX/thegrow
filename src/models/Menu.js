@@ -22,9 +22,16 @@ const MenuSchema = new mongoose.Schema({
     enum: ["Soup", "Appetizer", "Main Course", "Dessert", "Drinks"]
   },
 
+  menuType: {
+    type: String,
+    enum: ["FOOD", "BAR"],
+    default: "FOOD",
+    required: true
+  },
+
   subCategory: {
     type: String,
-    enum: ["Signature", "Indian", "Continental", "Asian"],
+    enum: ["Signature", "Indian", "Continental", "Asian", "Beer", "Wine", "Cocktails", "Spirits"],
   },
 
   isVeg: {

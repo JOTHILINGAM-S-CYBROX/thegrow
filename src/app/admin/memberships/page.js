@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useStatusPill } from '@/contexts/StatusPillContext';
 import ConfirmationModal from '@/components/ConfirmationModal';
+import MembershipCard from '@/components/MembershipCard';
 
 export default function AdminMemberships() {
   const [members, setMembers] = useState([]);
@@ -18,6 +19,7 @@ export default function AdminMemberships() {
   const [activeAadhaarFilename, setActiveAadhaarFilename] = useState('');
   const [activeMemberName, setActiveMemberName] = useState('');
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [printingMember, setPrintingMember] = useState(null);
 
   // Manual Membership Form State
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
@@ -30,7 +32,7 @@ export default function AdminMemberships() {
   const [manualName, setManualName] = useState('');
   const [manualDob, setManualDob] = useState('');
   const [manualAadhaarLastFour, setManualAadhaarLastFour] = useState('');
-  const [manualPlanType, setManualPlanType] = useState('BASIC');
+  const [manualPlanType, setManualPlanType] = useState('MEMBERSHIP');
   const [manualAge, setManualAge] = useState(0);
   const [isManualAgeValid, setIsManualAgeValid] = useState(false);
   const [manualError, setManualError] = useState('');
@@ -89,7 +91,11 @@ export default function AdminMemberships() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
+        // Instantly update the UI state
+        setMembers(prev => prev.map(m => m.id === membershipId ? { ...m, paymentStatus: 'PAID', planStatus: 'ACTIVE' } : m));
         showPill('Payment verified and membership activated successfully!', 'success');
+        
+        // Fetch in background to ensure sync
         fetchMembers();
       } else {
         showPill(data.error || 'Failed to update payment status.', 'error');
@@ -256,7 +262,7 @@ export default function AdminMemberships() {
         setManualName('');
         setManualDob('');
         setManualAadhaarLastFour('');
-        setManualPlanType('BASIC');
+        setManualPlanType('MEMBERSHIP');
         setManualFile(null);
         setManualFilePreview(null);
         setManualStep(1);
@@ -298,7 +304,8 @@ export default function AdminMemberships() {
     const matchesSearch = 
       member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.phone.includes(searchTerm) ||
-      member.customerNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      member.customerNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (member.aadhaarLastFour && member.aadhaarLastFour.includes(searchTerm));
       
     const matchesPlan = 
       selectedPlanFilter === 'ALL' || 
@@ -350,7 +357,7 @@ export default function AdminMemberships() {
         </div>
         
         <div className="grid grid-cols-3 md:flex md:flex-wrap gap-2">
-          {['ALL', 'BASIC', 'PREMIUM'].map(plan => (
+          {['ALL', 'MEMBERSHIP'].map(plan => (
             <button
               key={plan}
               onClick={() => setSelectedPlanFilter(plan)}
@@ -360,7 +367,7 @@ export default function AdminMemberships() {
                   : 'bg-white border-stone-200 hover:bg-stone-50 text-stone-600'
               }`}
             >
-              {plan === 'ALL' ? 'All Plans' : plan === 'BASIC' ? 'Grove Saver' : 'Grove Elite'}
+              {plan === 'ALL' ? 'All Plans' : 'The Grove Membership'}
             </button>
           ))}
         </div>
@@ -404,11 +411,7 @@ export default function AdminMemberships() {
                     <h3 className="font-semibold text-lg text-stone-900">{member.name}</h3>
                     <p className="text-sm text-stone-600 mt-0.5">{member.phone}</p>
                   </div>
-                  {member.planType === 'PREMIUM' ? (
-                    <span className="bg-purple-100 text-purple-800 border border-purple-200 text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wider">Grove Elite</span>
-                  ) : (
-                    <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wider">Grove Saver</span>
-                  )}
+                  <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wider">The Grove Membership</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 bg-stone-50 p-3 rounded-lg border border-stone-100">
@@ -476,8 +479,18 @@ export default function AdminMemberships() {
                         disabled={markingPaidId === member.id}
                         className="inline-flex items-center gap-1 bg-emerald-800 hover:bg-emerald-900 text-white border border-emerald-950 text-[10px] uppercase tracking-wider px-2.5 py-1.5 rounded font-bold transition shadow-sm disabled:opacity-50"
                       >
-                        <span className="material-symbols-outlined text-xs">paid</span>
-                        {markingPaidId === member.id ? '...' : 'Mark Paid'}
+                        <span className="material-symbols-outlined text-xs">verified_user</span>
+                        {markingPaidId === member.id ? '...' : 'Verify & Activate'}
+                      </button>
+                    )}
+
+                    {member.paymentStatus === 'PAID' && (
+                      <button
+                        onClick={() => setPrintingMember(member)}
+                        className="inline-flex items-center gap-1 bg-stone-800 hover:bg-stone-900 text-white border border-stone-950 text-[10px] uppercase tracking-wider px-2.5 py-1.5 rounded font-bold transition shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-xs">print</span>
+                        Print Card
                       </button>
                     )}
                   </div>
@@ -510,11 +523,7 @@ export default function AdminMemberships() {
                     <td className="px-6 py-4 font-semibold text-stone-900">{member.name}</td>
                     <td className="px-6 py-4">{member.phone}</td>
                     <td className="px-6 py-4">
-                      {member.planType === 'PREMIUM' ? (
-                        <span className="bg-purple-100 text-purple-800 border border-purple-200 text-xs px-2.5 py-1 rounded font-bold uppercase tracking-wider">Grove Elite</span>
-                      ) : (
-                        <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs px-2.5 py-1 rounded font-bold uppercase tracking-wider">Grove Saver</span>
-                      )}
+                      <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs px-2.5 py-1 rounded font-bold uppercase tracking-wider">The Grove Membership</span>
                     </td>
                     <td className="px-6 py-4">
                       <div>{formatDOB(member.dob)}</div>
@@ -576,8 +585,18 @@ export default function AdminMemberships() {
                           disabled={markingPaidId === member.id}
                           className="inline-flex items-center gap-1 bg-emerald-800 hover:bg-emerald-900 text-white border border-emerald-950 text-[10px] uppercase tracking-wider px-2.5 py-1.5 rounded font-bold transition shadow-sm disabled:opacity-50"
                         >
-                          <span className="material-symbols-outlined text-xs">paid</span>
-                          {markingPaidId === member.id ? '...' : 'Mark Paid'}
+                          <span className="material-symbols-outlined text-xs">verified_user</span>
+                          {markingPaidId === member.id ? '...' : 'Verify & Activate'}
+                        </button>
+                      )}
+
+                      {member.paymentStatus === 'PAID' && (
+                        <button
+                          onClick={() => setPrintingMember(member)}
+                          className="inline-flex items-center gap-1 bg-stone-800 hover:bg-stone-900 text-white border border-stone-950 text-[10px] uppercase tracking-wider px-2.5 py-1.5 rounded font-bold transition shadow-sm"
+                        >
+                          <span className="material-symbols-outlined text-xs">print</span>
+                          Print Card
                         </button>
                       )}
                     </td>
@@ -866,33 +885,7 @@ export default function AdminMemberships() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="font-label text-[10px] tracking-widest uppercase text-stone-500 mb-1.5 block font-bold font-sans">Plan Tier</label>
-                    <div className="flex gap-4 pt-1">
-                      <label className="flex items-center gap-2 cursor-pointer bg-stone-50 border border-stone-200/50 p-3 rounded-lg flex-1">
-                        <input
-                          type="radio"
-                          name="manualPlan"
-                          value="BASIC"
-                          checked={manualPlanType === 'BASIC'}
-                          onChange={() => setManualPlanType('BASIC')}
-                          className="w-4 h-4 text-emerald-800 focus:ring-emerald-700"
-                        />
-                        <span className="text-xs font-label uppercase tracking-wider text-stone-700">Grove Saver</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer bg-stone-50 border border-stone-200/50 p-3 rounded-lg flex-1">
-                        <input
-                          type="radio"
-                          name="manualPlan"
-                          value="PREMIUM"
-                          checked={manualPlanType === 'PREMIUM'}
-                          onChange={() => setManualPlanType('PREMIUM')}
-                          className="w-4 h-4 text-emerald-800 focus:ring-emerald-700"
-                        />
-                        <span className="text-xs font-label uppercase tracking-wider text-stone-700">Grove Elite</span>
-                      </label>
-                    </div>
-                  </div>
+
 
                   <div className="flex justify-end gap-3 pt-6 border-t border-stone-100">
                     <button
@@ -927,15 +920,76 @@ export default function AdminMemberships() {
         </div>
       )}
 
-      <ConfirmationModal
-        isOpen={!!markingPaidId}
-        title="Activate Membership"
-        message="Are you sure you have received the payment for this membership in-person and want to activate it?"
-        confirmText="Activate"
-        isDestructive={false}
-        onConfirm={executeMarkAsPaid}
-        onCancel={() => setMarkingPaidId('')}
-      />
+      {/* DETAILED ACTIVATION / VERIFICATION MODAL */}
+      {!!markingPaidId && (() => {
+        const member = members.find(m => m.id === markingPaidId);
+        if (!member) return null;
+        return (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm transition-all duration-300">
+            <div className="relative w-full max-w-md overflow-hidden rounded-xl bg-white border border-stone-200 text-stone-850 shadow-2xl flex flex-col">
+              
+              <div className="flex items-center justify-between px-6 py-5 border-b border-stone-100 bg-stone-50">
+                <div>
+                  <span className="label-sm uppercase tracking-widest text-emerald-700 font-bold">Identity Verification</span>
+                  <h3 className="font-serif italic text-xl text-stone-800 mt-0.5">Activate Membership</h3>
+                </div>
+                <button 
+                  onClick={() => setMarkingPaidId('')}
+                  className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition rounded-full"
+                >
+                  <span className="material-symbols-outlined text-xl">close</span>
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4 bg-white">
+                <p className="text-sm text-stone-600 leading-relaxed">
+                  Verify the customer's identity and confirm you have received their membership payment before activating their account.
+                </p>
+
+                <div className="bg-stone-50 p-4 rounded-lg border border-stone-100 space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-stone-500 font-label uppercase tracking-widest text-[10px]">Name</span>
+                    <span className="font-semibold text-stone-800">{member.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-500 font-label uppercase tracking-widest text-[10px]">Verified Age</span>
+                    <span className="font-semibold text-stone-800">{member.age} ({formatDOB(member.dob)})</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-500 font-label uppercase tracking-widest text-[10px]">Aadhaar Last 4</span>
+                    <span className="font-semibold text-stone-800">•••• •••• {member.aadhaarLastFour}</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-stone-200">
+                    <span className="text-stone-500 font-label uppercase tracking-widest text-[10px]">Membership Tier</span>
+                    <span className="font-semibold text-emerald-700">The Grove Membership</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 px-6 py-4 border-t border-stone-100 bg-stone-50">
+                <button
+                  onClick={() => setMarkingPaidId('')}
+                  className="bg-white hover:bg-stone-100 text-stone-600 border border-stone-200 font-label text-xs uppercase tracking-widest px-5 py-2.5 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={executeMarkAsPaid}
+                  className="bg-emerald-800 hover:bg-emerald-900 text-white font-label text-xs uppercase tracking-widest px-5 py-2.5 rounded-lg transition font-bold"
+                >
+                  Confirm & Activate
+                </button>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* PRINT MEMBERSHIP CARD OVERLAY */}
+      {printingMember && (
+        <MembershipCard member={printingMember} onClose={() => setPrintingMember(null)} />
+      )}
     </div>
   );
 }

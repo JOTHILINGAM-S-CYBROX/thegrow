@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const PricingPlanSchema = new mongoose.Schema({
   planType: {
     type: String,
-    enum: ['FREE', 'BASIC', 'PREMIUM'],
+    enum: ['FREE', 'MEMBERSHIP'],
     required: true,
     unique: true,
     index: true,

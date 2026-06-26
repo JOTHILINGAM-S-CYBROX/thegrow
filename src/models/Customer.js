@@ -18,11 +18,7 @@ const CustomerSchema = new mongoose.Schema({
     unique: true,
     index: true,
   },
-  email: {
-    type: String,
-    required: false,
-    sparse: true,
-  },
+
   address: {
     type: String,
     required: false,
@@ -31,7 +27,7 @@ const CustomerSchema = new mongoose.Schema({
   // Plan Information
   planType: {
     type: String,
-    enum: ['FREE', 'BASIC', 'PREMIUM'],
+    enum: ['FREE', 'MEMBERSHIP'],
     default: 'FREE',
     index: true,
   },
@@ -163,7 +159,7 @@ const CustomerSchema = new mongoose.Schema({
     cuisinePreferences: [String],
     notificationPreference: {
       type: String,
-      enum: ['WhatsApp', 'Email', 'Both', 'None', 'SMS'],
+      enum: ['WhatsApp', 'SMS', 'None'],
       default: 'WhatsApp',
     },
   },

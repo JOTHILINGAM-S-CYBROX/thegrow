@@ -95,6 +95,16 @@ export async function POST(request) {
       );
     }
 
+    if (body.venue === 'Roof Top' && parseInt(body.guestCount, 10) > 50) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Roof Top venue has a maximum capacity of 50 guests.',
+        },
+        { status: 400 }
+      );
+    }
+
     // Validate past dates
     const selectedDateObj = new Date(body.eventDate);
     selectedDateObj.setHours(0, 0, 0, 0);
@@ -178,7 +188,6 @@ export async function POST(request) {
     await createOrUpdateCustomerPlan({
       phone: customerPhone,
       name: body.customerInfo.name || 'Customer',
-      email: body.customerInfo.email,
       address: body.customerInfo.address,
     });
 

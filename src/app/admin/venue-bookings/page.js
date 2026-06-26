@@ -207,7 +207,7 @@ export default function AdminVenueBookings() {
                     <td className="py-4 px-6 text-stone-400 font-headline text-sm">{booking.bookingNumber}</td>
                     <td className="py-4 px-6">
                       <p className="font-serif italic text-lg text-primary">{booking.customerInfo?.name || booking.customerName || 'Unknown Customer'}</p>
-                      <p className="text-[11px] font-label text-stone-400 mt-0.5">{booking.customerInfo?.email || booking.customerEmail || 'No Email'}</p>
+
                     </td>
                     <td className="py-4 px-6">
                       <p className="text-xs font-semibold text-stone-700">{booking.eventType}</p>
@@ -324,10 +324,6 @@ export default function AdminVenueBookings() {
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">Email</span>
-                        <span className="text-stone-600 text-sm font-medium">{selectedBooking.customerInfo?.email || selectedBooking.customerEmail || 'Not Provided'}</span>
-                      </div>
                       <div className="flex flex-col gap-1">
                         <span className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">Phone</span>
                         <span className="text-stone-600 text-sm font-medium">{selectedBooking.customerInfo?.phone || selectedBooking.customerPhone || 'Not Provided'}</span>

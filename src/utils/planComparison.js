@@ -324,7 +324,7 @@ export async function getUpgradeRecommendation(phone) {
     if (!customer) {
       return {
         currentPlan: 'FREE',
-        recommendation: 'Start with BASIC plan',
+        recommendation: 'Start with MEMBERSHIP plan',
         reason: 'New customer',
       };
     }
@@ -333,14 +333,14 @@ export async function getUpgradeRecommendation(phone) {
     const allPlans = await PricingPlan.find({ isActive: true }).sort('order');
 
     // Find next plan tier
-    const planOrder = ['FREE', 'BASIC', 'PREMIUM'];
+    const planOrder = ['FREE', 'MEMBERSHIP'];
     const currentIndex = planOrder.indexOf(customer.planType);
 
     if (currentIndex >= planOrder.length - 1) {
       return {
         currentPlan: customer.planType,
         recommendation: 'You are on the highest plan',
-        reason: 'Already at PREMIUM',
+        reason: 'Already at MEMBERSHIP',
       };
     }
 
@@ -372,7 +372,7 @@ export async function getUpgradeRecommendation(phone) {
  */
 export async function createOrUpdateCustomerPlan(customerData) {
   try {
-    const { phone, name, planType = 'FREE', email, address } = customerData;
+    const { phone, name, planType = 'FREE', address } = customerData;
 
     if (!phone || !name) {
       throw new Error('Phone and name are required');
@@ -389,7 +389,7 @@ export async function createOrUpdateCustomerPlan(customerData) {
         customerNumber,
         phone,
         name,
-        email: email || '',
+
         address: address || '',
         planType,
       });
@@ -483,7 +483,7 @@ export async function getCustomerSummary(phone) {
         customerNumber: customer.customerNumber,
         name: customer.name,
         phone: customer.phone,
-        email: customer.email,
+
         planType: customer.planType,
         planStatus: customer.planStatus,
         loyaltyPoints: customer.loyaltyPoints,

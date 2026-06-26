@@ -28,7 +28,7 @@ export async function GET(request) {
         customerNumber: m.customerNumber,
         name: m.verifiedName, // Use verified name directly from membership card
         phone: m.customerId?.phone || 'N/A', // Pulled from populated Customer reference
-        email: m.customerId?.email || 'N/A',
+
         planType: m.planType,
         planStatus: m.planStatus,
         planStartDate: m.planStartDate,

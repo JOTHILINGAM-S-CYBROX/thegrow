@@ -9,9 +9,12 @@ export async function GET(request) {
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 20;
     const subCategory = searchParams.get('subCategory');
+    const menuType = searchParams.get('menuType');
 
     const skip = (page - 1) * limit;
-    const query = subCategory ? { subCategory } : {};
+    const query = {};
+    if (subCategory) query.subCategory = subCategory;
+    if (menuType) query.menuType = menuType;
 
     const [menus, total] = await Promise.all([
       Menu.find(query).skip(skip).limit(limit).lean(),
@@ -40,7 +43,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     await dbConnect();
-    const { name, description, price, category, imageUrl } = await request.json();
+    const { name, description, price, category, subCategory, menuType, imageUrl } = await request.json();
 
     // Validation
     if (!name || !description || !price || !category) {
@@ -55,6 +58,8 @@ export async function POST(request) {
       description,
       price: parseFloat(price),
       category,
+      subCategory,
+      menuType: menuType || 'FOOD',
       imageUrl,
     });
 

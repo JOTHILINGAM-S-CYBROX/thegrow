@@ -68,31 +68,9 @@ async function initializeDatabase() {
           isActive: true,
         },
         {
-          planType: 'BASIC',
-          displayName: 'Basic Plan',
-          monthlyPrice: 299,
-          limits: {
-            ordersPerMonth: 20,
-            bookingsPerMonth: 5,
-            maxOrderValue: 50000,
-          },
-          features: [
-            'Priority ordering',
-            'Email & phone support',
-            'Up to 20 orders/month',
-            '10% discount on orders',
-            'Booking reservations',
-          ],
-          discounts: {
-            discountPercentage: 10,
-            maxDiscountAmount: 10000,
-          },
-          isActive: true,
-        },
-        {
-          planType: 'PREMIUM',
-          displayName: 'Premium Plan',
-          monthlyPrice: 999,
+          planType: 'MEMBERSHIP',
+          displayName: 'The Grove Membership',
+          monthlyPrice: 1499,
           limits: {
             ordersPerMonth: 999999,
             bookingsPerMonth: 999999,
@@ -116,7 +94,7 @@ async function initializeDatabase() {
       ];
 
       await PricingPlan.insertMany(defaultPlans);
-      console.log('  ✅ Default pricing plans created (3 plans)');
+      console.log('  ✅ Default pricing plans created (2 plans)');
     } else {
       console.log(`  ✅ Pricing plans already exist (${planCount} plans)`);
     }
@@ -172,9 +150,35 @@ async function initializeDatabase() {
           price: 320,
           description: 'Tender chicken in creamy tomato sauce',
           category: 'Main Course',
+          subCategory: 'Indian',
+          menuType: 'FOOD',
           isVeg: false,
           isSpicy: false,
           imageUrl: '/menu/butter-chicken.jpg',
+          available: true,
+        },
+        {
+          name: 'Grove Special IPA',
+          price: 450,
+          description: 'Crafted locally, this IPA brings hints of citrus and pine.',
+          category: 'Drinks',
+          subCategory: 'Beer',
+          menuType: 'BAR',
+          isVeg: true,
+          isSpicy: false,
+          imageUrl: '/menu/beer.jpg',
+          available: true,
+        },
+        {
+          name: 'Classic Mojito',
+          price: 350,
+          description: 'Refreshing white rum with mint and lime.',
+          category: 'Drinks',
+          subCategory: 'Cocktails',
+          menuType: 'BAR',
+          isVeg: true,
+          isSpicy: false,
+          imageUrl: '/menu/mojito.jpg',
           available: true,
         },
       ];

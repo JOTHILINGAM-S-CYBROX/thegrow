@@ -13,7 +13,7 @@ const VenueBookingSchema = new mongoose.Schema({
   },
   eventType: {
     type: String,
-    enum: ['Wedding', 'Corporate', 'Birthday', 'Anniversary', 'Other', 'Private Dinner', 'Wedding Ceremony', 'Corporate Retreat', 'Brand Launch'],
+    enum: ['Wedding', 'Corporate', 'Birthday', 'Private Dinner', 'Wedding Ceremony', 'Corporate Retreat', 'Brand Launch','Baby shower','others'],
     required: true,
   },
   guestCount: {
@@ -39,8 +39,8 @@ const VenueBookingSchema = new mongoose.Schema({
   },
   venue: {
     type: String,
-    enum: ['Indoor', 'Outdoor', 'Both', 'The Lawn', 'Al Fresco Deck', 'Private Grove'],
-    default: 'Indoor',
+    enum: [ 'The Lawn', 'Roof Top', 'Family Area'],
+    default: 'The Lawn',
   },
   customerInfo: {
     name: {
@@ -50,10 +50,6 @@ const VenueBookingSchema = new mongoose.Schema({
     phone: {
       type: String,
       required: true,
-    },
-    email: {
-      type: String,
-      required: false,
     },
     address: {
       type: String,
@@ -87,7 +83,7 @@ const VenueBookingSchema = new mongoose.Schema({
   },
   planType: {
     type: String,
-    enum: ['FREE', 'BASIC', 'PREMIUM'],
+    enum: ['FREE', 'MEMBERSHIP'],
     default: 'FREE',
     index: true,
   },

@@ -92,9 +92,9 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:h-[800px] auto-rows-[300px] md:auto-rows-auto">
             <div className="md:col-span-8 relative rounded-xl overflow-hidden group">
-              <img className="w-full h-full object-cover" alt="The Al Fresco Deck" src="/assets/ambience/08.jpg.webp" />
+              <img className="w-full h-full object-cover" alt="The Roof Top" src="/assets/ambience/08.jpg.webp" />
               <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <span className="text-on-primary font-label tracking-widest uppercase">The Al Fresco Deck</span>
+                <span className="text-on-primary font-label tracking-widest uppercase">The Roof Top</span>
               </div>
             </div>
             <div className="md:col-span-4 relative rounded-xl overflow-hidden group">
@@ -199,9 +199,7 @@ export default function Home() {
           <div>
             <span className="font-label text-stone-100 text-sm tracking-widest uppercase mb-6 block">Opening Hours</span>
             <ul className="space-y-2 text-stone-400 text-sm font-body">
-              <li>Lunch: 12:00 PM - 3:30 PM</li>
-              <li>Dinner: 7:00 PM - 11:00 PM</li>
-              <li className="pt-4 text-stone-300 italic">Open Daily</li>
+              <li>Open Daily 11 AM - 11 PM</li>
             </ul>
           </div>
         </div>

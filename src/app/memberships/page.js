@@ -38,7 +38,7 @@ export default function Page() {
 
   // Modal & Flow states
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedTier, setSelectedTier] = useState('BASIC'); // 'BASIC' or 'PREMIUM'
+  const [selectedTier, setSelectedTier] = useState('MEMBERSHIP'); // 'MEMBERSHIP'
   const [modalStep, setModalStep] = useState(1); // 1: Auth, 2: Aadhaar Upload, 3: Review & Verify, 4: Choose Payment, 5: Success
 
   // Authentication states
@@ -298,8 +298,9 @@ export default function Page() {
     setIsAgeValid(age >= 21);
   };
 
-  // Submit membership registration with specific payment details
-  const submitWithPayment = async (payStatus, payMethod) => {
+  // Submit membership registration directly as PENDING for admin approval
+  const submitApplication = async (e) => {
+    if (e) e.preventDefault();
     if (!isAgeValid) {
       setSubmitError('Verification Failed: Minors under 21 cannot register for memberships.');
       return;
@@ -314,8 +315,8 @@ export default function Page() {
     formData.append('dob', dob);
     formData.append('aadhaarLastFour', aadhaarLastFour);
     formData.append('file', selectedFile);
-    formData.append('paymentStatus', payStatus);
-    formData.append('paymentMethod', payMethod);
+    formData.append('paymentStatus', 'PENDING');
+    formData.append('paymentMethod', 'IN_PERSON');
 
     try {
       const res = await fetch('/api/memberships/apply', {
@@ -325,13 +326,9 @@ export default function Page() {
       const data = await res.json();
 
       if (data.success) {
-        setLastPaymentStatus(payStatus);
-        setLastPaymentMethod(payMethod);
+        setLastPaymentStatus('PENDING');
+        setLastPaymentMethod('IN_PERSON');
 
-        // Force refresh user context to reflect planType upgrade if paid immediately
-        if (payStatus === 'PAID' && auth.logout) {
-          await fetch('/api/auth/me');
-        }
         setModalStep(5); // Advance to Success Screen
       } else {
         setSubmitError(data.message || 'Failed to complete membership enrollment.');
@@ -393,62 +390,37 @@ export default function Page() {
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
 
-              {/* Saver Card */}
-              <div className="bg-surface-container-lowest p-6 md:p-12 lg:p-16 w-full flex flex-col justify-between group hover:shadow-2xl transition-all duration-500 rounded-lg">
-                <div>
-                  <div className="flex justify-between items-start mb-8 md:mb-12">
-                    <span className={`text-4xl text-on-primary-container material-symbols-outlined ${styles.materialSymbolsOutlined}`}>eco</span>
-                    <span className="text-on-tertiary-fixed-variant font-label text-sm tracking-widest uppercase">The Essential</span>
-                  </div>
-                  <h3 className="text-[clamp(1.2rem,2vw,2rem)] font-headline mb-6 text-primary">The Grove Saver<br/>Membership</h3>
-                  <ul className="space-y-3 md:space-y-6 mb-8 md:mb-12">
-                    <li className="flex items-center gap-4 text-on-surface-variant">
-                      <span className={`text-sm material-symbols-outlined ${styles.materialSymbolsOutlined}`}>check_circle</span>
-                      <span>10% off dining Mon-Thu</span>
-                    </li>
-                    <li className="flex items-center gap-4 text-on-surface-variant">
-                      <span className={`text-sm material-symbols-outlined ${styles.materialSymbolsOutlined}`}>check_circle</span>
-                      <span>Seasonal Welcome Drink</span>
-                    </li>
-                    <li className="flex items-center gap-4 text-on-surface-variant">
-                      <span className={`text-sm material-symbols-outlined ${styles.materialSymbolsOutlined}`}>check_circle</span>
-                      <span>Birthday Dessert surprise</span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="mt-auto">
-                  <div className="text-[clamp(1.2rem,2vw,2rem)] font-headline mb-6 md:mb-8">$149 <span className="text-[clamp(1rem,1.5vw,1.125rem)] font-sans font-light text-on-surface-variant italic">/ annually</span></div>
-                  <button onClick={() => openVerificationModal('BASIC')} className="w-full bg-surface-variant border border-primary/10 text-primary py-4 md:py-5 px-8 font-medium hover:bg-primary hover:text-on-primary transition-all duration-300 uppercase tracking-widest text-xs min-h-[44px]">Join Now</button>
-                </div>
-              </div>
-
-              {/* Elite Card */}
-              <div className="bg-primary text-on-primary p-6 md:p-12 lg:p-16 w-full flex flex-col justify-between relative overflow-hidden rounded-lg">
+              {/* The Grove Membership Card */}
+              <div className="bg-primary text-on-primary p-6 md:p-12 lg:p-16 w-full flex flex-col justify-between relative overflow-hidden rounded-lg col-span-1 lg:col-span-2 max-w-3xl mx-auto">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary-container rounded-full -mr-32 -mt-32 opacity-50"></div>
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-8 md:mb-12">
                     <span className={`text-4xl text-tertiary-fixed material-symbols-outlined ${styles.materialSymbolsOutlined}`}>auto_awesome</span>
-                    <span className="text-tertiary-fixed font-label text-sm tracking-widest uppercase">The Premium</span>
+                    <span className="text-tertiary-fixed font-label text-sm tracking-widest uppercase">The Membership</span>
                   </div>
-                  <h3 className="text-[clamp(1.2rem,2vw,2rem)] font-headline mb-6 text-on-primary">The Grove Elite<br/>Membership</h3>
+                  <h3 className="text-[clamp(1.2rem,2vw,2rem)] font-headline mb-6 text-on-primary">The Grove<br/>Membership</h3>
                   <ul className="space-y-3 md:space-y-6 mb-8 md:mb-12">
                     <li className="flex items-center gap-4 text-on-primary-container">
                       <span className={`text-sm material-symbols-outlined ${styles.materialSymbolsOutlined}`} style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                      <span className="text-on-primary">15% off dining Mon-Fri</span>
+                      <span className="text-on-primary">20% off dining and events</span>
                     </li>
                     <li className="flex items-center gap-4 text-on-primary-container">
                       <span className={`text-sm material-symbols-outlined ${styles.materialSymbolsOutlined}`} style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                      <span className="text-on-primary">Premium perk accessibility</span>
+                      <span className="text-on-primary">Unlimited ordering & bookings</span>
                     </li>
                     <li className="flex items-center gap-4 text-on-primary-container">
                       <span className={`text-sm material-symbols-outlined ${styles.materialSymbolsOutlined}`} style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                      <span className="text-on-primary">Concierge dining &amp; Priority booking</span>
+                      <span className="text-on-primary">Concierge dining & Priority booking</span>
+                    </li>
+                    <li className="flex items-center gap-4 text-on-primary-container">
+                      <span className={`text-sm material-symbols-outlined ${styles.materialSymbolsOutlined}`} style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                      <span className="text-on-primary">24/7 dedicated support</span>
                     </li>
                   </ul>
                 </div>
                 <div className="mt-auto relative z-10">
-                  <div className="text-[clamp(1.2rem,2vw,2rem)] font-headline mb-6 md:mb-8 text-tertiary-fixed-dim">$495 <span className="text-[clamp(1rem,1.5vw,1.125rem)] font-sans font-light text-on-primary-container italic">/ annually</span></div>
-                  <button onClick={() => openVerificationModal('PREMIUM')} className="w-full bg-tertiary-fixed text-on-tertiary-fixed py-4 md:py-5 px-8 font-medium hover:bg-white transition-all duration-300 uppercase tracking-widest text-xs min-h-[44px]">Join Now</button>
+                  <div className="text-[clamp(1.2rem,2vw,2rem)] font-headline mb-6 md:mb-8 text-tertiary-fixed-dim">₹14,999 <span className="text-[clamp(1rem,1.5vw,1.125rem)] font-sans font-light text-on-primary-container italic">/ annually</span></div>
+                  <button onClick={() => openVerificationModal('MEMBERSHIP')} className="w-full bg-tertiary-fixed text-on-tertiary-fixed py-4 md:py-5 px-8 font-medium hover:bg-white transition-all duration-300 uppercase tracking-widest text-xs min-h-[44px]">Join Now</button>
                 </div>
               </div>
 
@@ -490,7 +462,7 @@ export default function Page() {
             <h2 className="text-[clamp(2rem,4vw,4rem)] md:text-[clamp(2rem,4vw,4rem)] font-headline mb-8 italic dark:text-stone-50">Ready to step into the gallery?</h2>
             <p className="text-[clamp(1rem,1.5vw,1.125rem)] text-on-surface-variant dark:text-stone-300 mb-6 md:mb-8 leading-relaxed">Our membership team is available to assist you in selecting the perfect tier for your lifestyle. Join today and start your journey.</p>
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center w-full max-w-sm sm:max-w-none mx-auto">
-              <button onClick={() => openVerificationModal('BASIC')} className="w-full sm:w-auto bg-primary text-on-primary dark:bg-emerald-800 dark:text-white px-4 md:px-5 py-2.5 md:py-3 rounded-sm font-medium md:font-semibold tracking-[0.08em] uppercase text-[13px] md:text-[14px] min-h-[44px] md:min-h-[48px] lg:min-h-[52px] hover:opacity-90 transition-all flex items-center justify-center">Apply Now</button>
+              <button onClick={() => openVerificationModal('MEMBERSHIP')} className="w-full sm:w-auto bg-primary text-on-primary dark:bg-emerald-800 dark:text-white px-4 md:px-5 py-2.5 md:py-3 rounded-sm font-medium md:font-semibold tracking-[0.08em] uppercase text-[13px] md:text-[14px] min-h-[44px] md:min-h-[48px] lg:min-h-[52px] hover:opacity-90 transition-all flex items-center justify-center">Apply Now</button>
               <button className="w-full sm:w-auto border border-outline dark:border-stone-500 dark:text-stone-200 dark:hover:bg-stone-800 px-4 md:px-5 py-2.5 md:py-3 rounded-sm font-medium md:font-semibold tracking-[0.08em] uppercase text-[13px] md:text-[14px] min-h-[44px] md:min-h-[48px] lg:min-h-[52px] hover:bg-surface-variant transition-all flex items-center justify-center">Download Brochure</button>
             </div>
           </div>
@@ -507,7 +479,7 @@ export default function Page() {
               <div>
                 <span className="label-sm uppercase tracking-widest text-secondary font-semibold">Verification Portal</span>
                 <h3 className="font-headline text-2xl italic text-primary mt-1">
-                  {selectedTier === 'BASIC' ? 'The Grove Saver Membership' : 'The Grove Elite Membership'}
+                  The Grove Membership
                 </h3>
               </div>
               <button
@@ -712,9 +684,9 @@ export default function Page() {
                 </div>
               )}
 
-              {/* STEP 3: DETAILS REVIEW & VERIFICATION */}
+              {/* STEP 3: REVIEW EXTRACTED DETAILS */}
               {modalStep === 3 && (
-                <form onSubmit={(e) => { e.preventDefault(); setModalStep(4); }} className="space-y-8">
+                <form onSubmit={submitApplication} className="space-y-8">
                   <div className="bg-surface-container-low p-6 rounded-lg border border-outline-variant/20 flex items-center justify-between">
                     <div>
                       <span className="label-sm uppercase tracking-widest text-on-surface-variant">Extracted Profile Status</span>
@@ -818,7 +790,7 @@ export default function Page() {
                         disabled={isSubmitting || !fullName || !dob || aadhaarLastFour.length !== 4}
                         className="bg-emerald-600 text-white font-label text-xs tracking-widest uppercase px-8 py-3 rounded hover:bg-emerald-700 transition disabled:opacity-50 flex items-center gap-2"
                       >
-                        Proceed to Payment
+                        {isSubmitting ? 'Submitting...' : 'Submit Application'}
                       </button>
                     ) : (
                       <button
@@ -831,151 +803,20 @@ export default function Page() {
                     )}
                   </div>
                 </form>
-              )}
-
-              {/* STEP 4: CHOOSE PAYMENT METHOD */}
-              {modalStep === 4 && (
-                <div className="space-y-6">
-                  <div className="text-center max-w-md mx-auto space-y-2">
-                    <span className="material-symbols-outlined text-5xl text-emerald-800">payments</span>
-                    <h4 className="font-headline text-xl font-bold text-primary">Choose Payment Method</h4>
-                    <p className="text-sm text-on-surface-variant leading-relaxed font-body">
-                      Complete your payment to activate your {selectedTier === 'BASIC' ? 'Grove Saver' : 'Grove Elite'} membership benefits.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
-                    {/* Option A: PhonePe Online */}
-                    <button
-                      onClick={() => setPaymentFlow('ONLINE')}
-                      className={`flex flex-col items-center justify-center p-6 rounded-xl border text-center transition-all ${paymentFlow === 'ONLINE'
-                          ? 'border-emerald-600 bg-emerald-50 text-emerald-950 font-semibold shadow-inner'
-                          : 'border-stone-200 bg-white hover:bg-stone-50 text-stone-700'
-                        }`}
-                    >
-                      <span className="material-symbols-outlined text-3xl text-emerald-850 mb-2">qr_code_2</span>
-                      <span className="font-label text-sm uppercase tracking-wider font-bold">Online via PhonePe</span>
-                      <span className="text-[10px] text-stone-500 mt-1">Instant Activation</span>
-                    </button>
-
-                    {/* Option B: Pay In Person */}
-                    <button
-                      onClick={() => setPaymentFlow('IN_PERSON')}
-                      className={`flex flex-col items-center justify-center p-6 rounded-xl border text-center transition-all ${paymentFlow === 'IN_PERSON'
-                          ? 'border-emerald-600 bg-emerald-50 text-emerald-950 font-semibold shadow-inner'
-                          : 'border-stone-200 bg-white hover:bg-stone-50 text-stone-700'
-                        }`}
-                    >
-                      <span className="material-symbols-outlined text-3xl text-emerald-850 mb-2">point_of_sale</span>
-                      <span className="font-label text-sm uppercase tracking-wider font-bold">Pay In Person (Cash)</span>
-                      <span className="text-[10px] text-stone-500 mt-1">Pay at the counter</span>
-                    </button>
-                  </div>
-
-                  {/* Online Flow Simulator */}
-                  {paymentFlow === 'ONLINE' && (
-                    <div className="bg-stone-100 border border-stone-200 p-6 rounded-xl space-y-4">
-                      <div className="flex justify-between items-center">
-                        <span className="font-label text-[10px] tracking-widest uppercase text-emerald-900 font-bold">📱 PhonePe UPI Gateway Simulator</span>
-                        <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded font-label font-bold uppercase tracking-wider">UPI</span>
-                      </div>
-                      <p className="text-[11px] text-stone-600 leading-relaxed font-body">
-                        Choose a simulation option below to test the integration (including the fallback admin mark-paid flow):
-                      </p>
-                      <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                        <button
-                          onClick={() => submitWithPayment('PAID', 'ONLINE')}
-                          disabled={isSubmitting}
-                          className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-label text-[10px] uppercase tracking-wider py-3 rounded-lg font-bold transition disabled:opacity-50"
-                        >
-                          {isSubmitting ? 'Processing...' : 'Simulate Success'}
-                        </button>
-                        <button
-                          onClick={() => submitWithPayment('FAILED', 'ONLINE')}
-                          disabled={isSubmitting}
-                          className="flex-1 bg-red-650 hover:bg-red-700 text-white font-label text-[10px] uppercase tracking-wider py-3 rounded-lg font-bold transition disabled:opacity-50"
-                        >
-                          {isSubmitting ? 'Processing...' : 'Simulate Failure'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* In-Person Payment Instructions */}
-                  {paymentFlow === 'IN_PERSON' && (
-                    <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-xl space-y-4">
-                      <p className="text-xs text-emerald-900 leading-relaxed font-body">
-                        Your application details will be saved securely. When you approach the lobby counter, notify the administrator and pay the membership fee in person (Cash/UPI/Card).
-                      </p>
-                      <button
-                        onClick={() => submitWithPayment('PENDING', 'IN_PERSON')}
-                        disabled={isSubmitting}
-                        className="w-full bg-emerald-850 hover:bg-emerald-900 text-white font-label text-xs uppercase tracking-widest py-3.5 rounded-lg font-bold transition disabled:opacity-50 flex items-center justify-center gap-2"
-                      >
-                        {isSubmitting ? 'Submitting...' : 'Confirm & Register (Pay In-Person)'}
-                      </button>
-                    </div>
-                  )}
-
-                  {submitError && (
-                    <div className="p-4 bg-error-container border border-error/20 rounded-lg text-on-error-container text-sm flex gap-2 items-center">
-                      <span className="material-symbols-outlined text-lg">warning</span>
-                      <span>{submitError}</span>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex justify-end gap-4 border-t border-outline-variant/15 pt-6">
-                    <button
-                      onClick={() => setModalStep(3)}
-                      className="px-6 py-3 font-label text-xs uppercase tracking-widest hover:bg-stone-100 transition rounded"
-                    >
-                      Back
-                    </button>
-                  </div>
-                </div>
-              )}
+                   )}
 
               {/* STEP 5: DYNAMIC STATUS CONFIRMATION */}
               {modalStep === 5 && (
                 <div className="text-center py-8 space-y-6">
-                  {lastPaymentStatus === 'PAID' && (
-                    <>
-                      <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-emerald-50 border-2 border-emerald-500 text-emerald-600 animate-bounce">
-                        <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                      </div>
-                      <div className="space-y-2 max-w-md mx-auto">
-                        <h4 className="font-headline text-3xl italic text-primary">Membership Activated!</h4>
-                        <p className="text-sm text-on-surface-variant leading-relaxed font-body">
-                          Welcome to **The Grove** exclusive circle! Your payment was verified successfully. Your annual perks are now active.
-                        </p>
-                      </div>
-                    </>
-                  )}
-
                   {lastPaymentStatus === 'PENDING' && (
                     <>
                       <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-amber-50 border-2 border-amber-500 text-amber-600 animate-pulse">
                         <span className="material-symbols-outlined text-4xl">pending_actions</span>
                       </div>
                       <div className="space-y-2 max-w-md mx-auto">
-                        <h4 className="font-headline text-3xl italic text-amber-800">Registration Pending!</h4>
+                        <h4 className="font-headline text-3xl italic text-amber-800">Application Submitted!</h4>
                         <p className="text-sm text-on-surface-variant leading-relaxed font-body">
-                          Your details are saved! Please pay the membership fee at the counter. Once the administrator confirms the amount, your membership will activate instantly.
-                        </p>
-                      </div>
-                    </>
-                  )}
-
-                  {lastPaymentStatus === 'FAILED' && (
-                    <>
-                      <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-red-50 border-2 border-red-500 text-red-600">
-                        <span className="material-symbols-outlined text-4xl">error</span>
-                      </div>
-                      <div className="space-y-2 max-w-md mx-auto">
-                        <h4 className="font-headline text-3xl italic text-red-800">Payment Unsuccessful</h4>
-                        <p className="text-sm text-on-surface-variant leading-relaxed font-body">
-                          The online transaction failed, but we've saved your registration details! You can pay cash/UPI directly at the counter to activate your benefits.
+                          Your application has been sent to the admin. Please contact the restaurant to confirm your identity and complete your payment to activate the membership.
                         </p>
                       </div>
                     </>
@@ -984,7 +825,7 @@ export default function Page() {
                   <div className="bg-surface-container-low p-6 rounded-lg border border-outline-variant/20 max-w-sm mx-auto text-left space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className="text-on-surface-variant font-label text-xs uppercase tracking-wider">Tier</span>
-                      <span className="font-semibold text-primary">{selectedTier === 'BASIC' ? 'Grove Saver' : 'Grove Elite'}</span>
+                      <span className="font-semibold text-primary">The Grove Membership</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-on-surface-variant font-label text-xs uppercase tracking-wider">Owner Name</span>

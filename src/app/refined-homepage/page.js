@@ -127,7 +127,7 @@ export default function Page() {
             <div className="md:col-span-8 relative overflow-hidden group">
               <img className="w-full h-full object-cover grayscale-[0.3] group-hover:grayscale-0 transition-all duration-700" data-alt="Vast outdoor dining area" src="/assets/ambience/08.jpg.webp" />
               <div className="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <span className="text-on-primary font-label text-[10px] kerning-loose uppercase border border-on-primary/30 px-6 py-3">The Al Fresco Deck</span>
+                <span className="text-on-primary font-label text-[10px] kerning-loose uppercase border border-on-primary/30 px-6 py-3">The Roof Top</span>
               </div>
             </div>
             <div className="md:col-span-4 relative overflow-hidden group">

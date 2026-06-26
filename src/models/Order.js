@@ -54,7 +54,7 @@ const OrderSchema = new mongoose.Schema({
   },
   planType: {
     type: String,
-    enum: ['FREE', 'BASIC', 'PREMIUM'],
+    enum: ['FREE', 'MEMBERSHIP'],
     default: 'FREE',
     index: true,
   },
@@ -73,10 +73,7 @@ const OrderSchema = new mongoose.Schema({
       type: String,
       required: true,
     },
-    email: {
-      type: String,
-      required: false,
-    },
+
     specialRequests: {
       type: String,
       default: '',

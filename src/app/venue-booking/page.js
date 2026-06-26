@@ -12,8 +12,9 @@ export default function Page() {
   
   const [preferredSpace, setPreferredSpace] = useState('The Lawn');
   const [isPreferredSpaceOpen, setIsPreferredSpaceOpen] = useState(false);
+  const [venueOptions, setVenueOptions] = useState([]);
 
-  const [settings, setSettings] = useState({ eventBookingEnabled: true, loading: false });
+  const [settings, setSettings] = useState({ eventBookingEnabled: true, loading: true });
 
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
@@ -124,7 +125,6 @@ export default function Page() {
       return { time, isBooked, isPast, isDisabled: isBooked || isPast };
     });
   };
-  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [guestCount, setGuestCount] = useState('20');
   const [specialReqs, setSpecialReqs] = useState('');
@@ -141,6 +141,11 @@ export default function Page() {
     
     if (selectedDateObj < todayObj) {
       showPill("Cannot book a past date. Please select a valid date.", 'error');
+      return;
+    }
+
+    if (preferredSpace === 'Roof Top' && parseInt(guestCount, 10) > 50) {
+      showPill("Roof Top venue has a maximum capacity of 50 guests.", 'error');
       return;
     }
 
@@ -163,7 +168,6 @@ export default function Page() {
       specialRequests: specialReqs,
       customerInfo: {
         name: name,
-        email: email,
         phone: phone,
       }
     };
@@ -194,9 +198,10 @@ export default function Page() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [settingsRes, bookingsRes] = await Promise.all([
+        const [settingsRes, bookingsRes, venuesRes] = await Promise.all([
           fetch('/api/settings'),
-          fetch('/api/bookings')
+          fetch('/api/bookings'),
+          fetch('/api/bookings/venues')
         ]);
         
         if (settingsRes.ok) {
@@ -209,6 +214,8 @@ export default function Page() {
           } else {
             setSettings(prev => ({ ...prev, loading: false }));
           }
+        } else {
+          setSettings(prev => ({ ...prev, loading: false }));
         }
 
         if (bookingsRes.ok) {
@@ -239,6 +246,18 @@ export default function Page() {
             
             setPartiallyBookedDates(partial);
             setFullyBookedDates(full);
+          }
+        }
+
+        if (venuesRes.ok) {
+          const venuesData = await venuesRes.json();
+          if (venuesData.success) {
+            setVenueOptions(venuesData.options || []);
+            if (venuesData.defaultOption) {
+              setPreferredSpace(venuesData.defaultOption);
+            } else if (venuesData.options && venuesData.options.length > 0) {
+              setPreferredSpace(venuesData.options[0]);
+            }
           }
         }
       } catch (e) {
@@ -324,7 +343,7 @@ export default function Page() {
                     <span className="text-[10px] text-on-primary font-label tracking-[0.2em] uppercase">Capacity 80</span>
                   </div>
                 </div>
-                <h3 className="font-headline text-2xl mb-2">Al Fresco Deck</h3>
+                <h3 className="font-headline text-2xl mb-2">Roof Top</h3>
                 <p className="text-on-surface-variant body-md mb-6 leading-relaxed">A contemporary timber deck nestled between age-old oaks, ideal for cocktail receptions and brunch.</p>
                 <div className="flex items-center gap-2 text-primary font-medium group-hover:gap-4 transition-all">
                   <span className="text-xs uppercase tracking-widest">Select this space</span>
@@ -339,7 +358,7 @@ export default function Page() {
                     <span className="text-[10px] text-on-primary font-label tracking-[0.2em] uppercase">Capacity 20</span>
                   </div>
                 </div>
-                <h3 className="font-headline text-2xl mb-2">Private Grove</h3>
+                <h3 className="font-headline text-2xl mb-2">Family Area</h3>
                 <p className="text-on-surface-variant body-md mb-6 leading-relaxed">An intimate enclave surrounded by lush tropical ferns. Designed for exclusive chef's table experiences.</p>
                 <div className="flex items-center gap-2 text-primary font-medium group-hover:gap-4 transition-all">
                   <span className="text-xs uppercase tracking-widest">Select this space</span>
@@ -472,13 +491,9 @@ export default function Page() {
                     <input required value={name} onChange={e => setName(e.target.value)} className="w-full bg-transparent border-0 border-b border-outline focus:ring-0 focus:border-primary py-3 px-0" placeholder="Jane Doe" type="text" />
                   </div>
                   <div>
-                    <label className="block text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Email Address</label>
-                    <input required value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-transparent border-0 border-b border-outline focus:ring-0 focus:border-primary py-3 px-0" placeholder="jane@example.com" type="email" />
+                    <label className="block text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Phone Number</label>
+                    <input required value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-transparent border-0 border-b border-outline focus:ring-0 focus:border-primary py-3 px-0" placeholder="+1 234 567 8900" type="tel" />
                   </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Phone Number</label>
-                  <input required value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-transparent border-0 border-b border-outline focus:ring-0 focus:border-primary py-3 px-0" placeholder="+1 234 567 8900" type="tel" />
                 </div>
                 <div className="relative">
                   <label className="block text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Event Type</label>
@@ -538,11 +553,7 @@ export default function Page() {
                       <>
                         <div className="hidden md:block fixed inset-0 z-40" onClick={() => setIsPreferredSpaceOpen(false)}></div>
                         <div className="hidden md:flex absolute top-full left-0 mt-3 z-50 bg-surface md:w-[320px] lg:w-[380px] rounded-xl shadow-2xl border border-outline-variant/20 animate-in fade-in zoom-in-95 origin-top-left flex-col max-h-[320px] overflow-y-auto p-2">
-                          {[
-                            'The Lawn',
-                            'Al Fresco Deck',
-                            'Private Grove'
-                          ].map(opt => (
+                          {venueOptions.map(opt => (
                             <button
                               key={opt}
                               onClick={() => { setPreferredSpace(opt); setIsPreferredSpaceOpen(false); }}
@@ -687,11 +698,7 @@ export default function Page() {
               </button>
             </div>
             <div className="overflow-y-auto p-4 space-y-2">
-              {[
-                'The Lawn',
-                'Al Fresco Deck',
-                'Private Grove'
-              ].map(opt => (
+              {venueOptions.map(opt => (
                 <button
                   key={opt}
                   onClick={() => { setPreferredSpace(opt); setIsPreferredSpaceOpen(false); }}
