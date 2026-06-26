@@ -10,7 +10,7 @@ import { NextResponse } from 'next/server';
 export async function GET(request, { params }) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
 
     const booking = await VenueBooking.findById(id).lean();
     
@@ -34,7 +34,7 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     // Check if booking exists
@@ -124,7 +124,7 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
 
     const booking = await VenueBooking.findByIdAndDelete(id);
     

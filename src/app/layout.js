@@ -4,6 +4,7 @@ import Navigation from '@/components/Navigation';
 import KeyboardShortcutsWrapper from '@/components/KeyboardShortcutsWrapper';
 import { CartProvider } from '@/hooks/useCart';
 import { AuthProvider } from '@/hooks/useAuth';
+import { StatusPillProvider } from '@/contexts/StatusPillContext';
 
 export const metadata = {
   title: 'The Grove',
@@ -43,8 +44,10 @@ export default function RootLayout({
         <KeyboardShortcutsWrapper>
           <AuthProvider>
             <CartProvider>
-              <Navigation />
-              {children}
+              <StatusPillProvider>
+                <Navigation />
+                {children}
+              </StatusPillProvider>
             </CartProvider>
           </AuthProvider>
         </KeyboardShortcutsWrapper>

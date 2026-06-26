@@ -3,6 +3,8 @@
 import { useMenuItem } from '@/hooks/useMenu';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, use } from 'react';
+import { useStatusPill } from '@/contexts/StatusPillContext';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 export default function EditMenuItemPage({ params }) {
   const router = useRouter();
@@ -21,6 +23,8 @@ export default function EditMenuItemPage({ params }) {
   });
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const { showPill } = useStatusPill();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const categories = ['Soup', 'Appetizer', 'Main Course', 'Dessert', 'Drinks'];
   const subCategories = ['Indian', 'Continental', 'Asian'];
@@ -58,23 +62,25 @@ export default function EditMenuItemPage({ params }) {
     try {
       const result = await updateItem(formData);
       if (result) {
-        alert('Menu item updated successfully');
+        showPill('Menu item updated successfully', 'success');
         router.push('/admin/menu');
       }
     } catch (error) {
       setFormError('Error updating menu item');
+      showPill('Error updating menu item', 'error');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this item? This cannot be undone.')) return;
-
+  const executeDelete = async () => {
+    setIsDeleteModalOpen(false);
     const success = await deleteItem();
     if (success) {
-      alert('Menu item deleted successfully');
+      showPill('Menu item deleted successfully', 'success');
       router.push('/admin/menu');
+    } else {
+      showPill('Failed to delete menu item', 'error');
     }
   };
 
@@ -271,7 +277,7 @@ export default function EditMenuItemPage({ params }) {
             </button>
             <button
               type="button"
-              onClick={handleDelete}
+              onClick={() => setIsDeleteModalOpen(true)}
               className="px-6 py-3 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-xl font-semibold transition-colors"
             >
               Delete Item
@@ -279,6 +285,14 @@ export default function EditMenuItemPage({ params }) {
           </div>
         </form>
       </div>
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        title="Delete Menu Item"
+        message="Are you sure you want to delete this menu item? It will be permanently removed."
+        onConfirm={executeDelete}
+        onCancel={() => setIsDeleteModalOpen(false)}
+      />
     </div>
   );
 }

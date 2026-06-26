@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useStatusPill } from '@/contexts/StatusPillContext';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 export default function AdminMemberships() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { showPill } = useStatusPill();
   
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,11 +77,10 @@ export default function AdminMemberships() {
     setActiveMemberName('');
   };
 
-  const handleMarkAsPaid = async (membershipId) => {
-    if (!confirm('Are you sure you have received the payment for this membership in-person and want to activate it?')) {
-      return;
-    }
-    setMarkingPaidId(membershipId);
+  const executeMarkAsPaid = async () => {
+    if (!markingPaidId) return;
+    const membershipId = markingPaidId;
+    
     try {
       const res = await fetch('/api/admin/memberships/mark-paid', {
         method: 'POST',
@@ -87,16 +89,20 @@ export default function AdminMemberships() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert('Payment verified and membership activated successfully!');
+        showPill('Payment verified and membership activated successfully!', 'success');
         fetchMembers();
       } else {
-        alert(data.error || 'Failed to update payment status.');
+        showPill(data.error || 'Failed to update payment status.', 'error');
       }
     } catch (err) {
-      alert('Network error verifying payment.');
+      showPill('Network error verifying payment.', 'error');
     } finally {
       setMarkingPaidId('');
     }
+  };
+
+  const handleMarkAsPaid = (membershipId) => {
+    setMarkingPaidId(membershipId);
   };
 
   const handleManualFileChange = (e) => {
@@ -302,13 +308,13 @@ export default function AdminMemberships() {
   });
 
   return (
-    <div className="p-8 space-y-8 min-h-screen">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8 min-h-screen w-full mx-auto max-w-7xl">
       
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-[clamp(2rem,6vw,3rem)] font-serif italic text-stone-850 mb-2">Memberships Management</h2>
-          <p className="text-stone-500 font-body text-sm">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif italic text-stone-850 mb-2 break-words leading-tight">Memberships Management</h2>
+          <p className="text-stone-500 font-body text-sm mt-1">
             Monitor verified members, check age compliance, and review uploaded identity documents.
           </p>
         </div>
@@ -343,18 +349,18 @@ export default function AdminMemberships() {
           />
         </div>
         
-        <div className="flex gap-3">
+        <div className="grid grid-cols-3 md:flex md:flex-wrap gap-2">
           {['ALL', 'BASIC', 'PREMIUM'].map(plan => (
             <button
               key={plan}
               onClick={() => setSelectedPlanFilter(plan)}
-              className={`px-4 py-2 text-xs font-label uppercase tracking-wider rounded-lg border transition ${
+              className={`min-h-[44px] flex items-center justify-center text-center px-1 md:px-4 py-2 text-[9px] sm:text-[10px] md:text-xs font-label uppercase tracking-wider rounded-lg border transition leading-tight ${
                 selectedPlanFilter === plan
-                  ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold'
+                  ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold shadow-sm'
                   : 'bg-white border-stone-200 hover:bg-stone-50 text-stone-600'
               }`}
             >
-              {plan === 'ALL' ? 'All Plans' : plan === 'BASIC' ? 'Grove Saver (Basic)' : 'Grove Elite (Premium)'}
+              {plan === 'ALL' ? 'All Plans' : plan === 'BASIC' ? 'Grove Saver' : 'Grove Elite'}
             </button>
           ))}
         </div>
@@ -387,7 +393,101 @@ export default function AdminMemberships() {
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-stone-200/50 overflow-hidden">
-          <div className="overflow-x-auto">
+          
+          {/* Mobile Card Layout (Hidden on Desktop) */}
+          <div className="md:hidden flex flex-col divide-y divide-stone-100">
+            {filteredMembers.map((member) => (
+              <div key={member.id} className="p-5 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="font-mono text-[10px] text-stone-400 block mb-1">ID: {member.customerNumber}</span>
+                    <h3 className="font-semibold text-lg text-stone-900">{member.name}</h3>
+                    <p className="text-sm text-stone-600 mt-0.5">{member.phone}</p>
+                  </div>
+                  {member.planType === 'PREMIUM' ? (
+                    <span className="bg-purple-100 text-purple-800 border border-purple-200 text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wider">Grove Elite</span>
+                  ) : (
+                    <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wider">Grove Saver</span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 bg-stone-50 p-3 rounded-lg border border-stone-100">
+                  <div>
+                    <span className="text-[10px] text-stone-400 uppercase tracking-widest font-label block mb-0.5">Verified DOB</span>
+                    <div className="text-sm font-medium">{formatDOB(member.dob)}</div>
+                    <div className="text-[9px] text-emerald-700 font-bold uppercase tracking-wider mt-0.5">Age Verified</div>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-stone-400 uppercase tracking-widest font-label block mb-0.5">Aadhaar (Last 4)</span>
+                    <span className="font-mono bg-white border border-stone-200 px-1.5 py-0.5 rounded text-xs">
+                      •••• {member.aadhaarLastFour}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center bg-stone-50/50 p-3 rounded-lg border border-stone-100">
+                  <div>
+                    <span className="text-[10px] text-stone-400 uppercase tracking-widest font-label block mb-1">Pay Method</span>
+                    {member.paymentMethod === 'IN_PERSON' ? (
+                      <span className="inline-flex items-center gap-1 text-stone-600 bg-white border border-stone-200 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold">
+                        <span className="material-symbols-outlined text-[10px]">payments</span> In-Person
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-purple-700 bg-purple-50 border border-purple-150 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold">
+                        <span className="material-symbols-outlined text-[10px]">qr_code_2</span> Online
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-stone-400 uppercase tracking-widest font-label block mb-1">Status</span>
+                    {member.paymentStatus === 'PAID' ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-850 bg-emerald-50 border border-emerald-200/50 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold">
+                        <span className="material-symbols-outlined text-[10px]" style={{fontVariationSettings: "'FILL' 1"}}>check_circle</span> Paid
+                      </span>
+                    ) : member.paymentStatus === 'FAILED' ? (
+                      <span className="inline-flex items-center gap-1 text-red-800 bg-red-50 border border-red-200 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold">
+                        <span className="material-symbols-outlined text-[10px]">error</span> Failed
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold animate-pulse">
+                        <span className="material-symbols-outlined text-[10px]">pending_actions</span> Pending
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center pt-2 border-t border-stone-100">
+                  <span className="text-[10px] text-stone-400">{formatDate(member.createdAt)}</span>
+                  <div className="flex gap-2">
+                    {member.aadhaarImage && member.aadhaarImage !== 'manual_admin_registration.webp' ? (
+                      <button
+                        onClick={() => handleOpenViewer(member.aadhaarImage, member.name)}
+                        className="inline-flex items-center gap-1 bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200/50 text-[10px] uppercase tracking-wider px-2.5 py-1.5 rounded font-bold transition shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-xs">visibility</span> Card
+                      </button>
+                    ) : (
+                      <span className="text-[10px] text-stone-400 italic">No Image</span>
+                    )}
+
+                    {(member.paymentStatus === 'PENDING' || member.paymentStatus === 'FAILED') && (
+                      <button
+                        onClick={() => handleMarkAsPaid(member.id)}
+                        disabled={markingPaidId === member.id}
+                        className="inline-flex items-center gap-1 bg-emerald-800 hover:bg-emerald-900 text-white border border-emerald-950 text-[10px] uppercase tracking-wider px-2.5 py-1.5 rounded font-bold transition shadow-sm disabled:opacity-50"
+                      >
+                        <span className="material-symbols-outlined text-xs">paid</span>
+                        {markingPaidId === member.id ? '...' : 'Mark Paid'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table Layout (Hidden on Mobile) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-stone-50 border-b border-stone-100 text-stone-500 text-xs font-label uppercase tracking-wider">
@@ -457,7 +557,7 @@ export default function AdminMemberships() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-xs text-stone-500">{formatDate(member.createdAt)}</td>
-                    <td className="px-6 py-4 text-right flex items-center justify-end gap-2 mt-1">
+                    <td className="px-6 py-4 text-right flex items-center justify-end gap-2 mt-1 whitespace-nowrap">
                       {member.aadhaarImage && member.aadhaarImage !== 'manual_admin_registration.webp' ? (
                         <button
                           onClick={() => handleOpenViewer(member.aadhaarImage, member.name)}
@@ -826,6 +926,16 @@ export default function AdminMemberships() {
           </div>
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={!!markingPaidId}
+        title="Activate Membership"
+        message="Are you sure you have received the payment for this membership in-person and want to activate it?"
+        confirmText="Activate"
+        isDestructive={false}
+        onConfirm={executeMarkAsPaid}
+        onCancel={() => setMarkingPaidId('')}
+      />
     </div>
   );
 }

@@ -9,6 +9,25 @@ import styles from './page.module.css';
 
 export default function Page() {
   const [settings, setSettings] = useState({ foodOrderingEnabled: true, loading: true });
+  const [headerHeight, setHeaderHeight] = useState(88); // Default fallback
+  const [tabsHeight, setTabsHeight] = useState(60); // Default fallback
+
+  useEffect(() => {
+    const updateHeights = () => {
+      const nav = document.querySelector('nav');
+      if (nav) {
+        setHeaderHeight(nav.offsetHeight);
+      }
+      const tabs = document.getElementById('category-tabs');
+      if (tabs) {
+        setTabsHeight(tabs.offsetHeight);
+      }
+    };
+    
+    updateHeights();
+    window.addEventListener('resize', updateHeights);
+    return () => window.removeEventListener('resize', updateHeights);
+  }, []);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -87,8 +106,12 @@ export default function Page() {
           <p className="w-full md:max-w-2xl mx-auto text-on-surface-variant font-body leading-relaxed text-[clamp(1rem,2vw,1.25rem)]">From the heart of the coconut grove, we bring you flavors that dance between the shadows of the forest and the warmth of the coastal sun.</p>
         </header>
 
-        <section className="sticky top-[88px] z-40 bg-surface/90 backdrop-blur-md py-4 border-y border-outline-variant/15 mb-16 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-          <div className="w-full md:max-w-4xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+        <section 
+          id="category-tabs"
+          className="sticky z-[950] bg-surface/95 backdrop-blur-md py-4 border-y border-outline-variant/15 shadow-sm"
+          style={{ top: `${headerHeight}px` }}
+        >
+          <div className="w-full max-w-screen-xl mx-auto px-4 md:px-8">
             <div className="flex items-center gap-6 overflow-x-auto no-scrollbar w-full">
               <button 
                 onClick={() => handleSubCategoryChange(null)}
@@ -131,14 +154,25 @@ export default function Page() {
                 Asian
               </button>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <CartDrawer />
-            </div>
           </div>
         </section>
 
-        <section className="px-4 md:px-8 max-w-4xl mx-auto">
+        {/* Desktop Sticky Cart */}
+        <section 
+          className="hidden md:block sticky z-[900] bg-surface/90 backdrop-blur-md py-3 shadow-[0_10px_20px_rgba(0,0,0,0.03)] border-b border-outline-variant/10 mb-8 transition-all"
+          style={{ top: `${headerHeight + tabsHeight}px` }}
+        >
+          <div className="w-full max-w-screen-xl mx-auto px-4 md:px-8">
+            <CartDrawer mode="desktop" />
+          </div>
+        </section>
+
+        {/* Mobile Sticky Cart */}
+        <div className="md:hidden">
+          <CartDrawer mode="mobile" />
+        </div>
+
+        <section className="px-4 md:px-8 max-w-4xl mx-auto mt-8 md:mt-12">
           {loading && <div className="text-center py-12 text-stone-500">Loading menu items...</div>}
           <div className="flex flex-col gap-6 w-full">
             {items.map((item) => (

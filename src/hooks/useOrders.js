@@ -19,7 +19,7 @@ export function useOrders(page = 1, limit = 20, status = null) {
         page: page.toString(),
         limit: limit.toString(),
       });
-      if (status) query.append('status', status);
+      if (status && status !== 'All') query.append('status', status);
 
       const response = await fetch(`/api/orders?${query}`, {
         credentials: 'include',

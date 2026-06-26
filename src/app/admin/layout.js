@@ -52,7 +52,7 @@ export default function AdminLayout({ children }) {
         children
       ) : (
         <AdminProtectedRoute>
-          <div className="flex flex-col md:flex-row h-[100dvh] bg-stone-100 font-body text-stone-800 overflow-hidden">
+          <div className="flex flex-col md:flex-row h-[100dvh] bg-stone-100 font-body text-stone-800 overflow-hidden w-full max-w-[100vw]">
             
             {/* Mobile Header */}
             <div className="md:hidden flex items-center justify-between bg-emerald-950 text-white p-4 z-30 shadow-md shrink-0">
@@ -120,7 +120,7 @@ export default function AdminLayout({ children }) {
             </aside>
 
             {/* Main Content Area */}
-            <main className="flex-1 overflow-auto bg-stone-50/50 relative flex flex-col">
+            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-stone-50/50 relative flex flex-col w-full">
               {/* Subtle background decoration */}
               <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -mt-24 -mr-24 pointer-events-none"></div>
               {children}

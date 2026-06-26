@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import styles from './page.module.css';
+import { useStatusPill } from '@/contexts/StatusPillContext';
 
 export default function Page() {
+  const { showPill } = useStatusPill();
   const [settings, setSettings] = useState({ tableBookingEnabled: true, loading: false });
   const [step, setStep] = useState(1);
   
@@ -60,6 +62,41 @@ export default function Page() {
     setSelectedYear(currentYear);
   };
 
+  const allTimeSlots = ['18:30', '19:00', '19:30', '20:00', '20:30', '21:00'];
+
+  const parseTimeStr = (timeStr) => {
+    const [h, m] = timeStr.split(':');
+    return parseInt(h) * 60 + parseInt(m);
+  };
+
+  const getAvailableTimes = (day) => {
+    const isTodaySelected = selectedYear === today.getFullYear() && selectedMonth === today.getMonth() && day === today.getDate();
+    const now = new Date();
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+
+    return allTimeSlots.map(time => {
+      let isPast = false;
+      if (isTodaySelected) {
+        const timeMins = parseTimeStr(time);
+        if ((currentMins + 30) > timeMins) {
+          isPast = true;
+        }
+      }
+      return { time, isDisabled: isPast, isPast };
+    });
+  };
+
+  useEffect(() => {
+    const available = getAvailableTimes(selectedDate);
+    const currentSlot = available.find(s => s.time === selectedTime);
+    if (!currentSlot || currentSlot.isDisabled) {
+      const firstValid = available.find(s => !s.isDisabled);
+      if (firstValid) {
+        setSelectedTime(firstValid.time);
+      }
+    }
+  }, [selectedDate, selectedMonth, selectedYear]);
+
   const [selectedTime, setSelectedTime] = useState('19:30');
   
   const [partySize, setPartySize] = useState(2);
@@ -96,7 +133,14 @@ export default function Page() {
     const todayObj = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     
     if (selectedDateObj < todayObj) {
-      alert("Cannot book a past date. Please select a valid date.");
+      showPill("Cannot book a past date. Please select a valid date.", 'error');
+      return;
+    }
+
+    const available = getAvailableTimes(selectedDate);
+    const currentSlot = available.find(s => s.time === selectedTime);
+    if (!currentSlot || currentSlot.isDisabled) {
+      showPill("Selected time slot is no longer available.", 'error');
       return;
     }
 
@@ -222,22 +266,33 @@ export default function Page() {
                       )
                     })}
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {['18:30', '19:00', '19:30', '20:00', '20:30', '21:00'].map(time => (
-                      <button 
-                        key={time}
-                        onClick={() => setSelectedTime(time)}
-                        className={`py-4 border rounded transition-all text-sm font-medium ${selectedTime === time ? 'border-2 border-primary bg-primary-container text-on-primary-container font-bold' : 'border-outline-variant hover:border-primary hover:bg-surface-container-lowest'}`} 
-                        type="button"
-                      >
-                        {time}
-                      </button>
-                    ))}
-                  </div>
-                  
-                  <div className="flex justify-end pt-12">
-                    <button onClick={() => setStep(2)} className="w-full md:w-auto bg-primary text-on-primary px-12 py-5 rounded-full font-label uppercase text-sm tracking-[0.2em] shadow-xl hover:opacity-90 active:scale-95 transition-all" type="button">Next: Party Size</button>
-                  </div>
+                  {getAvailableTimes(selectedDate).every(slot => slot.isDisabled) ? (
+                    <div className="p-8 bg-surface-container-lowest border border-outline-variant/30 rounded-xl text-center my-8">
+                      <span className="material-symbols-outlined text-outline text-4xl mb-2">event_busy</span>
+                      <p className="text-lg font-serif text-on-surface-variant">No booking times available for today.</p>
+                      <p className="text-sm text-outline mt-2">Please choose another date.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {getAvailableTimes(selectedDate).map(({time, isDisabled, isPast}) => (
+                          <button 
+                            key={time}
+                            disabled={isDisabled}
+                            onClick={() => setSelectedTime(time)}
+                            className={`py-4 border rounded transition-all text-sm font-medium relative overflow-hidden ${isDisabled ? 'border-outline-variant/20 text-outline/40 cursor-not-allowed bg-surface-container-lowest ' + (!isPast ? 'line-through' : '') : selectedTime === time ? 'border-2 border-primary bg-primary-container text-on-primary-container font-bold' : 'border-outline-variant hover:border-primary hover:bg-surface-container-lowest'}`} 
+                            type="button"
+                          >
+                            {time}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      <div className="flex justify-end pt-12">
+                        <button onClick={() => setStep(2)} className="w-full md:w-auto bg-primary text-on-primary px-12 py-5 rounded-full font-label uppercase text-sm tracking-[0.2em] shadow-xl hover:opacity-90 active:scale-95 transition-all" type="button">Next: Party Size</button>
+                      </div>
+                    </>
+                  )}
                 </section>
                 )}
 

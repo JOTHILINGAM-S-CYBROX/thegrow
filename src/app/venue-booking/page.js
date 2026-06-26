@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import styles from './page.module.css';
+import { useStatusPill } from '@/contexts/StatusPillContext';
 
 export default function Page() {
+  const { showPill } = useStatusPill();
   const [eventType, setEventType] = useState('Private Dinner');
   const [isEventTypeOpen, setIsEventTypeOpen] = useState(false);
   
@@ -66,6 +68,17 @@ export default function Page() {
     setSelectedYear(currentYear);
   };
 
+  useEffect(() => {
+    const available = getAvailableTimes(selectedDate);
+    const currentSlot = available.find(s => s.time === selectedTime);
+    if (!currentSlot || currentSlot.isDisabled) {
+      const firstValid = available.find(s => !s.isDisabled);
+      if (firstValid) {
+        setSelectedTime(firstValid.time);
+      }
+    }
+  }, [selectedDate, selectedMonth, selectedYear]);
+
   const [selectedTime, setSelectedTime] = useState('06:00 PM');
   const [customTime, setCustomTime] = useState('');
   const [name, setName] = useState('');
@@ -76,14 +89,39 @@ export default function Page() {
 
   const allTimeSlots = ['11:00 AM', '02:30 PM', '06:00 PM', '08:00 PM', 'Full Day', 'Custom Timing'];
 
+  const parseTimeStr = (timeStr) => {
+    if (timeStr === 'Full Day') return 11 * 60; // 11:00 AM
+    if (timeStr === 'Custom Timing') return 23 * 60 + 59;
+    const match = timeStr.match(/(\d+):(\d+)\s+(AM|PM)/);
+    if (!match) return 0;
+    let [_, h, m, mod] = match;
+    let hours = parseInt(h);
+    if (mod === 'PM' && hours !== 12) hours += 12;
+    if (mod === 'AM' && hours === 12) hours = 0;
+    return hours * 60 + parseInt(m);
+  };
+
   const getAvailableTimes = (day) => {
+    const isTodaySelected = selectedYear === today.getFullYear() && selectedMonth === today.getMonth() && day === today.getDate();
+    const now = new Date();
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+
     const bookedForDay = partiallyBookedDates[day] || [];
     return allTimeSlots.map(time => {
       let isBooked = bookedForDay.includes(time);
       if (bookedForDay.includes('Full Day') && time !== 'Custom Timing') {
         isBooked = true; // if full day is booked, other specific slots are unavailable
       }
-      return { time, isBooked };
+      
+      let isPast = false;
+      if (isTodaySelected && time !== 'Custom Timing') {
+        const timeMins = parseTimeStr(time);
+        if ((currentMins + 30) > timeMins) {
+          isPast = true;
+        }
+      }
+
+      return { time, isBooked, isPast, isDisabled: isBooked || isPast };
     });
   };
   const [email, setEmail] = useState('');
@@ -94,7 +132,7 @@ export default function Page() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validate past dates
@@ -102,16 +140,55 @@ export default function Page() {
     const todayObj = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     
     if (selectedDateObj < todayObj) {
-      alert("Cannot book a past date. Please select a valid date.");
+      showPill("Cannot book a past date. Please select a valid date.", 'error');
+      return;
+    }
+
+    const available = getAvailableTimes(selectedDate);
+    const currentSlot = available.find(s => s.time === selectedTime);
+    if (!currentSlot || currentSlot.isDisabled) {
+      showPill("Selected time slot is no longer available.", 'error');
       return;
     }
 
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
+    
+    const payload = {
+      eventName: `${eventType} - ${name}`,
+      eventType: eventType,
+      guestCount: parseInt(guestCount, 10),
+      eventDate: selectedDateObj.toISOString(),
+      timeSlot: selectedTime === 'Custom Timing' ? customTime : selectedTime,
+      venue: preferredSpace,
+      specialRequests: specialReqs,
+      customerInfo: {
+        name: name,
+        email: email,
+        phone: phone,
+      }
+    };
+    
+    console.log("Venue booking payload:", payload);
+
+    try {
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsSuccess(true);
+      } else {
+        showPill(`Failed to submit: ${data.error}`, 'error');
+      }
+    } catch (error) {
+      showPill('An error occurred while submitting your inquiry.', 'error');
+    } finally {
       setIsSubmitting(false);
-      setIsSuccess(true);
-    }, 1500);
+    }
   };
 
   useEffect(() => {
@@ -329,24 +406,32 @@ export default function Page() {
                 </div>
                 <div className="mt-8 pt-8 border-t border-outline-variant/20">
                   <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-4">Available Times</p>
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                    {getAvailableTimes(selectedDate).map(({time, isBooked}) => (
-                      <button 
-                        key={time}
-                        type="button"
-                        disabled={isBooked}
-                        onClick={() => setSelectedTime(time)}
-                        className={`w-full min-h-[48px] px-4 py-2 rounded text-sm transition-all flex items-center justify-center text-center
-                          ${isBooked ? 'border border-outline/20 text-outline/40 cursor-not-allowed bg-surface-container-lowest line-through' :
-                            selectedTime === time ? 'bg-primary-container text-on-primary-container font-medium' : 
-                            'border border-outline hover:bg-primary hover:text-on-primary'
-                          }
-                        `}
-                      >
-                        {time}
-                      </button>
-                    ))}
-                  </div>
+                  {getAvailableTimes(selectedDate).every(slot => slot.isDisabled) ? (
+                    <div className="p-6 bg-surface-container-lowest border border-outline-variant/30 rounded text-center">
+                      <span className="material-symbols-outlined text-outline mb-2">event_busy</span>
+                      <p className="text-sm font-medium text-on-surface-variant">No booking times available for today.</p>
+                      <p className="text-xs text-outline mt-1">Please choose another date.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                      {getAvailableTimes(selectedDate).map(({time, isDisabled, isPast}) => (
+                        <button 
+                          key={time}
+                          type="button"
+                          disabled={isDisabled}
+                          onClick={() => setSelectedTime(time)}
+                          className={`w-full min-h-[48px] px-4 py-2 rounded text-sm transition-all flex items-center justify-center text-center
+                            ${isDisabled ? 'border border-outline/20 text-outline/40 cursor-not-allowed bg-surface-container-lowest ' + (!isPast ? 'line-through' : '') :
+                              selectedTime === time ? 'bg-primary-container text-on-primary-container font-medium' : 
+                              'border border-outline hover:bg-primary hover:text-on-primary'
+                            }
+                          `}
+                        >
+                          {time}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   {selectedTime === 'Custom Timing' && (
                     <div className="mt-4 animate-in fade-in slide-in-from-top-2">
                       <label className="block text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Specify Custom Time</label>
@@ -372,6 +457,12 @@ export default function Page() {
                   <h3 className="text-2xl font-headline mb-2">Inquiry Submitted</h3>
                   <p className="text-emerald-700">Thank you, {name}. Your booking inquiry for {eventType} on {monthNames[selectedMonth]} {selectedDate}, {selectedYear} at {selectedTime === 'Custom Timing' ? customTime : selectedTime} has been received. Our concierge will contact you shortly.</p>
                   <button onClick={() => setIsSuccess(false)} className="mt-6 text-sm font-label uppercase tracking-widest underline">Submit another inquiry</button>
+                </div>
+              ) : getAvailableTimes(selectedDate).every(slot => slot.isDisabled) ? (
+                <div className="bg-surface-container-low p-8 rounded-lg border border-outline-variant/10 text-center flex flex-col items-center justify-center h-full min-h-[400px]">
+                  <span className="material-symbols-outlined text-6xl text-outline-variant mb-4">event_busy</span>
+                  <h3 className="text-xl font-headline text-stone-700 mb-2">No Slots Available</h3>
+                  <p className="text-stone-500 text-sm max-w-xs mx-auto">All time slots for this date have either passed or are fully booked. Please select another date to continue.</p>
                 </div>
               ) : (
               <form className="space-y-6 md:space-y-8 pb-safe" onSubmit={handleSubmit}>

@@ -14,6 +14,7 @@ import { NextResponse } from 'next/server';
  * Fetch all bookings with optional filtering
  */
 export async function GET(request) {
+  console.log('--- GET /api/bookings CALLED ---');
   try {
     await dbConnect();
 
@@ -25,6 +26,8 @@ export async function GET(request) {
     const skip = (page - 1) * limit;
     const sortBy = searchParams.get('sortBy') || '-createdAt';
 
+    console.log(`GET /api/bookings Params -> status: ${status}, phone: ${customerPhone}, page: ${page}, limit: ${limit}`);
+
     // Build query filter
     const filter = {};
     if (status) {
@@ -33,6 +36,8 @@ export async function GET(request) {
     if (customerPhone) {
       filter['customerInfo.phone'] = customerPhone;
     }
+
+    console.log('GET /api/bookings Filter ->', JSON.stringify(filter));
 
     // Get total count
     const total = await VenueBooking.countDocuments(filter);
@@ -43,6 +48,9 @@ export async function GET(request) {
       .skip(skip)
       .limit(limit)
       .lean();
+
+    console.log("Admin loading from collection:", VenueBooking.collection.name);
+    console.log("Records returned:", bookings.length);
 
     return NextResponse.json({
       success: true,
@@ -68,10 +76,12 @@ export async function GET(request) {
  * Create a new booking with plan validation
  */
 export async function POST(request) {
+  console.log('--- POST /api/bookings CALLED ---');
   try {
     await dbConnect();
 
     const body = await request.json();
+    console.log('POST /api/bookings Body ->', JSON.stringify(body, null, 2));
 
     // Validate required fields
     if (!body.eventName || !body.eventType || !body.guestCount || !body.eventDate) {
@@ -99,6 +109,42 @@ export async function POST(request) {
         },
         { status: 400 }
       );
+    }
+
+    const isToday = selectedDateObj.getTime() === todayObj.getTime();
+    if (isToday && body.timeSlot) {
+      let timeMins = 24 * 60; // Default to end of day if unparseable
+      
+      if (body.timeSlot === 'Full Day') {
+        timeMins = 11 * 60;
+      } else if (body.timeSlot === 'Custom Timing') {
+        timeMins = 23 * 60 + 59;
+      } else if (body.timeSlot.includes('AM') || body.timeSlot.includes('PM')) {
+        const match = body.timeSlot.match(/(\d+):(\d+)\s+(AM|PM)/);
+        if (match) {
+          let [_, h, m, mod] = match;
+          let hours = parseInt(h, 10);
+          if (mod === 'PM' && hours !== 12) hours += 12;
+          if (mod === 'AM' && hours === 12) hours = 0;
+          timeMins = hours * 60 + parseInt(m, 10);
+        }
+      } else if (body.timeSlot.includes(':')) {
+        const [h, m] = body.timeSlot.split(':');
+        timeMins = parseInt(h, 10) * 60 + parseInt(m, 10);
+      }
+
+      const now = new Date();
+      const currentMins = now.getHours() * 60 + now.getMinutes();
+
+      if ((currentMins + 30) > timeMins) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Booking creation failed: Selected time slot has already passed or is too soon.',
+          },
+          { status: 400 }
+        );
+      }
     }
 
     if (!body.customerInfo?.phone) {
@@ -168,6 +214,8 @@ export async function POST(request) {
     });
 
     const savedBooking = await newBooking.save();
+    
+    console.log("Created booking:", savedBooking);
 
     // Update customer usage
     await updateCustomerUsage(

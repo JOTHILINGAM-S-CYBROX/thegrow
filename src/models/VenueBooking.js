@@ -13,7 +13,7 @@ const VenueBookingSchema = new mongoose.Schema({
   },
   eventType: {
     type: String,
-    enum: ['Wedding', 'Corporate', 'Birthday', 'Anniversary', 'Other'],
+    enum: ['Wedding', 'Corporate', 'Birthday', 'Anniversary', 'Other', 'Private Dinner', 'Wedding Ceremony', 'Corporate Retreat', 'Brand Launch'],
     required: true,
   },
   guestCount: {
@@ -39,7 +39,7 @@ const VenueBookingSchema = new mongoose.Schema({
   },
   venue: {
     type: String,
-    enum: ['Indoor', 'Outdoor', 'Both'],
+    enum: ['Indoor', 'Outdoor', 'Both', 'The Lawn', 'Al Fresco Deck', 'Private Grove'],
     default: 'Indoor',
   },
   customerInfo: {
@@ -115,7 +115,7 @@ const VenueBookingSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ['Pending', 'Advance Paid', 'Fully Paid', 'Failed'],
+    enum: ['Pending', 'Advance Paid', 'Fully Paid', 'Failed', 'Completed'],
     default: 'Pending',
   },
   advanceAmount: {
@@ -152,4 +152,7 @@ VenueBookingSchema.pre('save', function(next) {
   next();
 });
 
-export default mongoose.models.VenueBooking || mongoose.model('VenueBooking', VenueBookingSchema);
+// Clear the cached model to ensure the schema update is applied during hot-reloads
+delete mongoose.models.VenueBooking;
+
+export default mongoose.model('VenueBooking', VenueBookingSchema);

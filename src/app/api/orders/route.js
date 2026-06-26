@@ -18,13 +18,17 @@ import { isFeatureEnabled } from '@/utils/settings';
  */
 export async function GET(request) {
   try {
-    // Check for kitchen staff authentication first
+    // Check for admin authentication
+    const adminToken = request.cookies.get('adminToken');
+    const isAdmin = !!adminToken;
+
+    // Check for kitchen staff authentication
     const kitchenToken = request.cookies.get('kitchenToken');
     const isKitchenStaff = !!kitchenToken;
 
-    // If not kitchen staff, check for customer authentication
+    // If not admin or kitchen staff, check for customer authentication
     let userFromAuth = null;
-    if (!isKitchenStaff) {
+    if (!isAdmin && !isKitchenStaff) {
       userFromAuth = extractUserFromRequest(request);
       if (!userFromAuth) {
         return NextResponse.json(
@@ -44,9 +48,9 @@ export async function GET(request) {
     const sortBy = searchParams.get('sortBy') || '-createdAt';
 
     // Build query filter
-    // Kitchen staff see all orders, customers see only their orders
+    // Admins and Kitchen staff see all orders, customers see only their orders
     let filter = {};
-    if (!isKitchenStaff) {
+    if (!isAdmin && !isKitchenStaff) {
       filter['customerInfo.phone'] = userFromAuth.phone;
     }
     

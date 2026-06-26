@@ -2,11 +2,15 @@
 
 import { useOrders } from '@/hooks/useOrders';
 import { useState } from 'react';
+import { useStatusPill } from '@/contexts/StatusPillContext';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 export default function KitchenOrders() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('Pending');
   const { orders, loading, error, pagination, refetch } = useOrders(page, 20, status);
+  const { showPill } = useStatusPill();
+  const [orderToDelete, setOrderToDelete] = useState(null);
 
   const handleStatusFilter = (newStatus) => {
     setStatus(newStatus);
@@ -14,8 +18,6 @@ export default function KitchenOrders() {
   };
 
   const updateStatus = async (orderId, currentStatus) => {
-    console.log('🔵 updateStatus called with orderId:', orderId, 'type:', typeof orderId);
-    
     let newStatus;
     if (currentStatus === 'Pending') newStatus = 'Preparing';
     else if (currentStatus === 'Preparing') newStatus = 'Ready';
@@ -24,8 +26,6 @@ export default function KitchenOrders() {
 
     try {
       const url = `/api/orders/${orderId}`;
-      console.log('🔵 Fetching URL:', url);
-      
       const response = await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -34,22 +34,22 @@ export default function KitchenOrders() {
       const data = await response.json();
 
       if (data.success) {
-        // Auto-advance to next status tab to show the updated order
         setStatus(newStatus);
         setPage(1);
-        alert(`✅ Order status updated to: ${newStatus}`);
-        // Refresh orders (will fetch with new status filter)
+        showPill(`Order moved to ${newStatus}`, 'success');
         setTimeout(() => refetch(), 200);
       } else {
-        alert(`❌ Error: ${data.error}`);
+        showPill(`Failed to update: ${data.error}`, 'error');
       }
     } catch (error) {
-      alert(`❌ Error updating order: ${error.message}`);
+      showPill('Failed to update order', 'error');
     }
   };
 
-  const handleDeleteOrder = async (orderId) => {
-    if (!confirm('Are you sure you want to delete this order?')) return;
+  const executeDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    const orderId = orderToDelete;
+    setOrderToDelete(null);
 
     try {
       const response = await fetch(`/api/orders/${orderId}`, {
@@ -58,13 +58,13 @@ export default function KitchenOrders() {
       const data = await response.json();
 
       if (data.success) {
-        alert('Order deleted successfully');
+        showPill('Order deleted successfully', 'success');
         refetch();
       } else {
-        alert(`Error: ${data.error}`);
+        showPill(`Failed to delete: ${data.error}`, 'error');
       }
     } catch (error) {
-      alert(`Error deleting order: ${error.message}`);
+      showPill('Failed to delete order', 'error');
     }
   };
 
@@ -101,7 +101,7 @@ export default function KitchenOrders() {
 
       {/* Status Filter */}
       <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap gap-2">
-        {['Pending', 'Preparing', 'Ready', 'Completed', 'Cancelled'].map((st) => (
+        {['All', 'Pending', 'Preparing', 'Ready', 'Completed', 'Cancelled'].map((st) => (
           <button
             key={st}
             onClick={() => handleStatusFilter(st)}
@@ -136,78 +136,78 @@ export default function KitchenOrders() {
           {orders.map((order) => (
             <div
               key={order._id}
-              className="bg-white rounded-2xl shadow-sm border border-stone-100 p-4 sm:p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between hover:shadow-md transition-shadow group gap-4 md:gap-0 w-full"
+              className="bg-white rounded-xl shadow-sm border border-stone-200 p-3 sm:p-4 flex flex-row items-center justify-between gap-3 w-full hover:shadow-md transition-shadow"
             >
-              <div className="flex items-start gap-4 md:gap-8 w-full md:w-auto min-w-0">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-surface-container-low flex items-center justify-center text-primary border border-stone-100 shrink-0">
-                  <span className="material-symbols-outlined text-2xl sm:text-3xl">local_mall</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-2">
-                    <span className="font-headline text-xl sm:text-2xl text-stone-800 truncate">{order.orderNumber}</span>
-                    <span
-                      className={`text-[9px] sm:text-[10px] font-label font-bold uppercase tracking-[0.2em] px-2 sm:px-3 py-1 rounded-full border whitespace-nowrap
-                      ${order.status === 'Pending' ? 'bg-amber-50 text-amber-700 border-amber-200' : ''}
-                      ${order.status === 'Preparing' ? 'bg-sky-50 text-sky-700 border-sky-200' : ''}
-                      ${order.status === 'Ready' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : ''}
-                      ${order.status === 'Completed' ? 'bg-gray-50 text-gray-700 border-gray-200' : ''}
-                      ${order.status === 'Cancelled' ? 'bg-rose-50 text-rose-700 border-rose-200' : ''}
-                    `}
-                    >
-                      {order.status}
-                    </span>
-                  </div>
-                  <p className="text-primary font-headline text-base sm:text-lg italic mb-2 sm:mb-3 truncate">
+              {/* Left Side: Info */}
+              <div className="flex flex-col min-w-0 flex-1 justify-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-headline text-base sm:text-lg text-stone-800 truncate leading-none">
+                    {order.orderNumber}
+                  </span>
+                  <span className="text-primary font-serif italic text-sm truncate leading-none">
                     {order.customerInfo?.name || 'Guest'}
-                  </p>
-                  <p className="text-stone-500 font-body text-xs sm:text-sm mb-2 sm:mb-3 break-words">
-                    {order.items && order.items.length > 0
-                      ? order.items.map(item => `${item.quantity}x ${item.itemName || item.name}`).join(', ')
-                      : 'No items'}
-                  </p>
-                  <p className="text-stone-400 font-label text-xs uppercase tracking-widest flex items-center gap-2">
-                    <span className="material-symbols-outlined text-xs">schedule</span>
+                  </span>
+                  <span
+                    className={`text-[9px] font-label font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border whitespace-nowrap
+                    ${order.status === 'Pending' ? 'bg-amber-50 text-amber-700 border-amber-200' : ''}
+                    ${order.status === 'Preparing' ? 'bg-sky-50 text-sky-700 border-sky-200' : ''}
+                    ${order.status === 'Ready' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : ''}
+                    ${order.status === 'Completed' ? 'bg-gray-50 text-gray-700 border-gray-200' : ''}
+                    ${order.status === 'Cancelled' ? 'bg-rose-50 text-rose-700 border-rose-200' : ''}
+                  `}
+                  >
+                    {order.status}
+                  </span>
+                </div>
+
+                <p className="text-stone-500 font-body text-xs sm:text-sm truncate">
+                  {order.items && order.items.length > 0
+                    ? order.items.map(item => `${item.quantity}x ${item.itemName || item.name}`).join(', ')
+                    : 'No items'}
+                </p>
+
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-stone-400 font-label text-[10px] uppercase tracking-widest mt-0.5">
+                  <div className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[11px]">schedule</span>
                     {formatTime(order.createdAt)}
-                  </p>
+                  </div>
                   {order.scheduledTime && (
-                    <p className="text-amber-600 font-label text-xs uppercase tracking-widest flex items-center gap-2 mt-2 font-semibold">
-                      <span className="material-symbols-outlined text-xs">access_time</span>
-                      Collection: {
-                        order.scheduledTime === 'now' ? 'ASAP' :
-                        order.scheduledTime === 'tomorrow' ? 'Tomorrow 12:00' :
-                        order.scheduledTime
-                      }
-                    </p>
+                    <div className="flex items-center gap-1 text-amber-600 font-semibold">
+                      <span className="material-symbols-outlined text-[11px]">access_time</span>
+                      {order.scheduledTime === 'now' ? 'ASAP' : order.scheduledTime === 'tomorrow' ? 'Tom 12:00' : order.scheduledTime}
+                    </div>
                   )}
                   {order.customerInfo?.phone && (
-                    <p className="text-stone-400 font-label text-xs uppercase tracking-widest flex items-center gap-2 mt-2">
-                      <span className="material-symbols-outlined text-xs">phone</span>
+                    <div className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[11px]">phone</span>
                       {order.customerInfo.phone}
-                    </p>
+                    </div>
                   )}
+                  <div className="text-emerald-800 font-bold text-[11px] sm:text-xs">
+                    ₹{order.totalPrice || order.totalAmount}
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start gap-4 md:gap-6 text-right ml-0 md:ml-4 shrink-0 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-stone-100">
-                <div className="text-xl sm:text-2xl font-serif italic text-emerald-800">₹{order.totalPrice || order.totalAmount}</div>
-                {order.status !== 'Completed' && order.status !== 'Cancelled' && (
+              {/* Right Side: Action */}
+              <div className="shrink-0 flex items-center">
+                {order.status !== 'Completed' && order.status !== 'Cancelled' ? (
                   <button
                     onClick={() => updateStatus(order._id, order.status)}
-                    className={`px-4 sm:px-8 py-2 sm:py-3 rounded-full font-label text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-colors shadow-sm active:scale-95 w-full sm:w-auto text-center
+                    className={`px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg font-label text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-colors shadow-sm active:scale-95 text-center flex items-center justify-center gap-1 min-w-[80px]
                       ${order.status === 'Pending' ? 'bg-primary text-on-primary hover:bg-emerald-800' : ''}
                       ${order.status === 'Preparing' ? 'bg-sky-600 text-white hover:bg-sky-700' : ''}
                       ${order.status === 'Ready' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}
                     `}
                   >
-                    {order.status === 'Pending' && 'Start Cooking'}
-                    {order.status === 'Preparing' && 'Mark as Ready'}
-                    {order.status === 'Ready' && 'Order Complete'}
+                    {order.status === 'Pending' && 'Cook →'}
+                    {order.status === 'Preparing' && 'Ready →'}
+                    {order.status === 'Ready' && 'Done →'}
                   </button>
-                )}
-                {(order.status === 'Completed' || order.status === 'Cancelled') && (
+                ) : (
                   <button
-                    onClick={() => handleDeleteOrder(order._id)}
-                    className="px-4 sm:px-8 py-2 sm:py-3 rounded-full font-label text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-colors shadow-sm bg-rose-100 text-rose-700 hover:bg-rose-200 w-full sm:w-auto text-center"
+                    onClick={() => setOrderToDelete(order._id)}
+                    className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg font-label text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-colors shadow-sm bg-rose-100 text-rose-700 hover:bg-rose-200 text-center min-w-[80px]"
                   >
                     Delete
                   </button>
@@ -227,6 +227,14 @@ export default function KitchenOrders() {
           )}
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={!!orderToDelete}
+        title="Delete Order"
+        message="Are you sure you want to delete this order? It will be removed permanently from the system."
+        onConfirm={executeDeleteOrder}
+        onCancel={() => setOrderToDelete(null)}
+      />
     </div>
   );
 }

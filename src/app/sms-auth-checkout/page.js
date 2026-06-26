@@ -22,6 +22,21 @@ export default function SMSAuthCheckout() {
   const [orderPlacing, setOrderPlacing] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderData, setOrderData] = useState(null);
+  const [headerHeight, setHeaderHeight] = useState(88); // Default fallback
+
+  useEffect(() => {
+    // Dynamically calculate header height to avoid collision
+    const updateHeaderHeight = () => {
+      const nav = document.querySelector('nav');
+      if (nav) {
+        setHeaderHeight(nav.offsetHeight);
+      }
+    };
+    
+    updateHeaderHeight();
+    window.addEventListener('resize', updateHeaderHeight);
+    return () => window.removeEventListener('resize', updateHeaderHeight);
+  }, []);
 
   useEffect(() => {
     if (items.length === 0 && !orderSuccess) {
@@ -152,9 +167,13 @@ export default function SMSAuthCheckout() {
       <div className="w-[95%] md:w-full md:max-w-screen-xl mx-auto px-2 sm:px-4 md:px-6 grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-12">
         
         {/* Order Summary Section */}
-        <div className="lg:col-span-5 order-1 lg:order-2">
-          <div className="bg-surface-container-low rounded-2xl p-4 md:p-8 border border-outline-variant/30 sticky top-32 shadow-sm">
-            <h3 className="font-headline text-xl md:text-[clamp(1.75rem,5vw,2.25rem)] italic text-primary mb-4 md:mb-6 border-b border-outline/20 pb-3 md:pb-4">Order Summary</h3>
+        <div className="lg:col-span-5 order-1 lg:order-2 relative z-40">
+          {/* Desktop & Tablet: Sticky Side Panel */}
+          <div 
+            className="hidden md:block bg-surface border border-outline-variant/20 rounded-2xl p-6 shadow-sm sticky transition-all"
+            style={{ top: `${headerHeight + 24}px` }}
+          >
+            <h3 className="font-headline text-xl italic text-primary mb-4 border-b border-outline/10 pb-3">Order Summary</h3>
             <div className="space-y-3 md:space-y-6 max-h-[50vh] overflow-y-auto pr-2 no-scrollbar">
               {items.map((item) => (
                 <div key={item._id} className="flex items-center gap-3 md:gap-4 group">
@@ -179,9 +198,23 @@ export default function SMSAuthCheckout() {
               </div>
               <div className="flex justify-between items-end">
                 <span className="text-[13px] md:text-sm text-on-surface-variant font-label uppercase tracking-widest">Grand Total</span>
-                <span className="font-headline text-2xl md:text-4xl italic text-primary leading-none">₹{getTotal().toFixed(2)}</span>
+                <span className="font-headline text-2xl md:text-3xl italic text-primary leading-none">₹{getTotal().toFixed(2)}</span>
               </div>
             </div>
+          </div>
+
+          {/* Mobile: Bottom Sticky Checkout Bar (Order Summary) */}
+          <div className="md:hidden fixed bottom-0 left-0 w-full bg-surface border-t border-outline-variant/20 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] z-[60] pb-safe px-4 py-3 flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold opacity-80">{getItemCount()} Items</span>
+              <span className="font-serif italic text-xl font-bold text-stone-850 leading-none">₹{getTotal().toFixed(2)}</span>
+            </div>
+            <button 
+              onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+              className="bg-primary text-on-primary px-6 py-2.5 rounded-full font-label text-xs uppercase tracking-widest font-bold shadow-md"
+            >
+              Checkout <span className="material-symbols-outlined text-[14px] align-middle ml-1">arrow_downward</span>
+            </button>
           </div>
         </div>
 
@@ -225,7 +258,7 @@ export default function SMSAuthCheckout() {
                           className="flex-1 bg-surface border border-outline/30 rounded-xl px-6 py-4 text-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-body placeholder:text-stone-300"
                         />
                         {!message && (
-                          <div className="fixed lg:static bottom-0 left-0 w-full p-4 lg:p-0 bg-surface/90 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-t border-outline/10 lg:border-none z-50 pb-safe">
+                          <div className="mt-6 md:mt-0 lg:static bottom-0 left-0 w-full lg:p-0 bg-surface/90 lg:bg-transparent lg:backdrop-blur-none border-outline/10 lg:border-none z-50">
                             <button
                               onClick={handleSendOTP}
                               disabled={loading || phone.length < 10}
@@ -251,7 +284,7 @@ export default function SMSAuthCheckout() {
                             disabled={loading}
                             className="flex-1 bg-surface border border-outline/30 rounded-xl px-6 py-4 text-center text-2xl tracking-[0.5em] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-headline font-bold text-stone-800"
                           />
-                          <div className="fixed lg:static bottom-0 left-0 w-full p-4 lg:p-0 bg-surface/90 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-t border-outline/10 lg:border-none z-50 pb-safe">
+                          <div className="mt-6 md:mt-0 lg:static bottom-0 left-0 w-full lg:p-0 bg-surface/90 lg:bg-transparent lg:backdrop-blur-none border-outline/10 lg:border-none z-50">
                             <button
                               onClick={handleVerifyOTP}
                               disabled={loading || otpCode.length !== 6}
@@ -317,7 +350,7 @@ export default function SMSAuthCheckout() {
                         </button>
                       </div>
                     </div>
-                    <div className="fixed lg:static bottom-0 left-0 w-full p-4 lg:p-0 bg-surface/90 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-t border-outline/10 lg:border-none z-50 pb-safe">
+                    <div className="mt-8 mb-24 md:mb-0 lg:static bottom-0 left-0 w-full lg:p-0 bg-surface/90 lg:bg-transparent lg:backdrop-blur-none border-outline/10 lg:border-none z-50">
                       <button
                         onClick={handlePlaceOrder}
                         disabled={orderPlacing}

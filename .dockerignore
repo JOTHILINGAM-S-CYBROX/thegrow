@@ -1,0 +1,12 @@
+Dockerfile
+.dockerignore
+node_modules
+npm-debug.log
+README.md
+.next
+.git
+.env*.local
+cpanel_deploy.tar.gz
+cpanel_deploy.zip
+update.zip
+update_fixed.zip

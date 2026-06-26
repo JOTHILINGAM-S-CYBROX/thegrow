@@ -3,6 +3,8 @@
 import { useMenu } from '@/hooks/useMenu';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useStatusPill } from '@/contexts/StatusPillContext';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 export default function AdminMenuPage() {
   const [page, setPage] = useState(1);
@@ -23,6 +25,8 @@ export default function AdminMenuPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const { items, loading, error, pagination, refetch } = useMenu(page, 20, category);
+  const { showPill } = useStatusPill();
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const categories = ['Soup', 'Appetizer', 'Main Course', 'Dessert', 'Drinks'];
   const subCategories = ['Indian', 'Continental', 'Asian'];
@@ -54,7 +58,7 @@ export default function AdminMenuPage() {
       const data = await response.json();
 
       if (data.success) {
-        alert('Menu item added successfully');
+        showPill('Menu item added successfully', 'success');
         setFormData({
           name: '',
           description: '',
@@ -70,17 +74,21 @@ export default function AdminMenuPage() {
         refetch();
       } else {
         setFormError(data.error || 'Failed to add menu item');
+        showPill(data.error || 'Failed to add menu item', 'error');
       }
     } catch (error) {
       setFormError('Error adding menu item');
+      showPill('Error adding menu item', 'error');
       console.error('Error:', error);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDeleteItem = async (id) => {
-    if (!confirm('Are you sure you want to delete this item?')) return;
+  const executeDeleteItem = async () => {
+    if (!itemToDelete) return;
+    const id = itemToDelete;
+    setItemToDelete(null);
 
     try {
       const response = await fetch(`/api/menu/${id}`, {
@@ -89,27 +97,27 @@ export default function AdminMenuPage() {
       const data = await response.json();
 
       if (data.success) {
-        alert('Menu item deleted successfully');
+        showPill('Menu item deleted successfully', 'success');
         refetch();
       } else {
-        alert(`Error: ${data.error}`);
+        showPill(`Failed to delete: ${data.error}`, 'error');
       }
     } catch (error) {
-      alert(`Error deleting item: ${error.message}`);
+      showPill('Failed to delete item', 'error');
     }
   };
 
   return (
-    <div className="p-12 relative z-10 w-full max-w-7xl">
+    <div className="p-4 md:p-8 lg:p-12 relative z-10 w-full max-w-7xl mx-auto">
       {/* Header */}
-      <header className="mb-12 flex justify-between items-end border-b border-stone-200 pb-8">
+      <header className="mb-8 md:mb-12 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-stone-200 pb-6 md:pb-8 gap-4">
         <div>
-          <h1 className="text-5xl font-serif text-primary italic leading-tight">Menu Management</h1>
-          <p className="text-stone-500 font-label tracking-widest text-xs uppercase mt-3">Add, Edit & Delete Menu Items</p>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif text-primary italic leading-tight break-words">Menu Management</h1>
+          <p className="text-stone-500 font-label tracking-widest text-xs uppercase mt-2 md:mt-3">Add, Edit & Delete Menu Items</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-primary hover:bg-emerald-800 text-white px-6 py-3 rounded-full font-label text-xs font-bold uppercase tracking-widest transition-colors"
+          className="w-full md:w-auto bg-primary hover:bg-emerald-800 text-white px-6 py-3 rounded-full font-label text-xs font-bold uppercase tracking-widest transition-colors flex justify-center items-center gap-2"
         >
           {showForm ? '✕ Cancel' : '+ Add New Item'}
         </button>
@@ -127,7 +135,7 @@ export default function AdminMenuPage() {
           )}
 
           <form onSubmit={handleAddMenuItem} className="grid grid-cols-1 gap-6">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-stone-700 mb-2">Item Name *</label>
                 <input
@@ -155,7 +163,7 @@ export default function AdminMenuPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-stone-700 mb-2">Category *</label>
                 <select
@@ -185,7 +193,7 @@ export default function AdminMenuPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-stone-700 mb-2">Image URL</label>
                 <input
@@ -259,12 +267,12 @@ export default function AdminMenuPage() {
 
       {/* Category Filter */}
       <div className="mb-6 bg-white rounded-lg shadow-sm border border-stone-100 p-4">
-        <div className="flex gap-2 flex-wrap">
+        <div className="grid grid-cols-3 md:flex md:flex-wrap gap-2">
           <button
             onClick={() => handleCategoryFilter('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+            className={`min-h-[44px] px-1 md:px-4 py-2 rounded-lg text-[10px] sm:text-xs md:text-sm font-semibold transition flex items-center justify-center text-center leading-tight ${
               category === null
-                ? 'bg-primary text-white'
+                ? 'bg-primary text-white shadow-sm'
                 : 'bg-stone-200 text-stone-800 hover:bg-stone-300'
             }`}
           >
@@ -274,9 +282,9 @@ export default function AdminMenuPage() {
             <button
               key={cat}
               onClick={() => handleCategoryFilter(cat)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+              className={`min-h-[44px] px-1 md:px-4 py-2 rounded-lg text-[10px] sm:text-xs md:text-sm font-semibold transition flex items-center justify-center text-center leading-tight ${
                 category === cat
-                  ? 'bg-primary text-white'
+                  ? 'bg-primary text-white shadow-sm'
                   : 'bg-stone-200 text-stone-800 hover:bg-stone-300'
               }`}
             >
@@ -355,18 +363,18 @@ export default function AdminMenuPage() {
 
                 <p className="text-stone-600 text-sm mb-4 line-clamp-2">{item.description}</p>
 
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 pt-4 border-t border-stone-100 gap-4 sm:gap-0">
                   <span className="text-2xl font-serif italic text-emerald-800">₹{item.price}</span>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 w-full sm:w-auto">
                     <Link
                       href={`/admin/menu/${item._id}`}
-                      className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm font-semibold transition"
+                      className="flex-1 sm:flex-none text-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm font-semibold transition"
                     >
                       Edit
                     </Link>
                     <button
-                      onClick={() => handleDeleteItem(item._id)}
-                      className="px-4 py-2 bg-rose-100 text-rose-700 rounded-lg hover:bg-rose-200 text-sm font-semibold transition"
+                      onClick={() => setItemToDelete(item._id)}
+                      className="flex-1 sm:flex-none px-4 py-2 bg-rose-100 text-rose-700 rounded-lg hover:bg-rose-200 text-sm font-semibold transition"
                     >
                       Delete
                     </button>
@@ -403,6 +411,14 @@ export default function AdminMenuPage() {
           ))}
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={!!itemToDelete}
+        title="Delete Menu Item"
+        message="Are you sure you want to delete this menu item? It will no longer be available for customers."
+        onConfirm={executeDeleteItem}
+        onCancel={() => setItemToDelete(null)}
+      />
     </div>
   );
 }

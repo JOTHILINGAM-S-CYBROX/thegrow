@@ -21,8 +21,12 @@ export function useBookings(page = 1, limit = 20, status = null) {
       });
       if (status) query.append('status', status);
 
+      console.log(`[useBookings] Fetching bookings with query: ${query.toString()}`);
+
       const response = await fetch(`/api/bookings?${query}`);
       const data = await response.json();
+
+      console.log(`[useBookings] Received data:`, data);
 
       if (data.success) {
         setBookings(data.bookings);
