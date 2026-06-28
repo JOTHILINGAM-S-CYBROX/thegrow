@@ -77,7 +77,7 @@ export async function POST(request) {
     const customer = await createOrUpdateCustomerPlan({
       phone: body.phone,
       name: body.name,
-      email: body.email,
+
       address: body.address,
       planType: body.planType || 'FREE',
     });

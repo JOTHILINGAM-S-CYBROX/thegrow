@@ -14,8 +14,8 @@ const MembershipSchema = new mongoose.Schema({
   },
   planType: {
     type: String,
-    enum: ['BASIC', 'PREMIUM'],
-    required: true,
+    enum: ['MEMBERSHIP'],
+    default: 'MEMBERSHIP',
   },
   planStatus: {
     type: String,

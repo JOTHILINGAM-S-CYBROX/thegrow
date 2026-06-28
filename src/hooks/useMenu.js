@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-export function useMenu(page = 1, limit = 20, subCategory = null) {
+export function useMenu(page = 1, limit = 20, subCategory = null, menuType = null) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -20,6 +20,7 @@ export function useMenu(page = 1, limit = 20, subCategory = null) {
         limit: limit.toString(),
       });
       if (subCategory) query.append('subCategory', subCategory);
+      if (menuType) query.append('menuType', menuType);
 
       const response = await fetch(`/api/menu?${query}`);
       const data = await response.json();
@@ -36,7 +37,7 @@ export function useMenu(page = 1, limit = 20, subCategory = null) {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, subCategory]);
+  }, [page, limit, subCategory, menuType]);
 
   useEffect(() => {
     fetchItems();

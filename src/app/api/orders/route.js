@@ -159,7 +159,7 @@ export async function POST(request) {
     await createOrUpdateCustomerPlan({
       phone: customerPhone,
       name: body.customerInfo?.name || `Customer ${customerPhone}`,
-      email: body.customerInfo?.email,
+
     });
 
     // Generate order number
@@ -170,7 +170,7 @@ export async function POST(request) {
     const customerInfo = {
       phone: customerPhone,
       name: body.customerInfo?.name || `Customer ${customerPhone}`,
-      email: body.customerInfo?.email || '',
+
       ...body.customerInfo,
     };
 

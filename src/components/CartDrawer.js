@@ -135,14 +135,7 @@ export default function CartDrawer({ mode = 'mobile' }) {
                 key={item._id}
                 className="flex gap-3 sm:gap-4 pb-4 border-b border-outline-variant/10"
               >
-                {/* Item Image */}
-                {item.imageUrl && (
-                  <img
-                    src={item.imageUrl}
-                    alt={item.name}
-                    className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg shrink-0"
-                  />
-                )}
+                {/* Item Image removed per request */}
 
                 {/* Item Details */}
                 <div className="flex-1 min-w-0 flex flex-col">

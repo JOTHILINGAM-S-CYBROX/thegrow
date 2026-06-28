@@ -64,7 +64,7 @@ export async function PUT(request, { params }) {
     // Update allowed fields
     const allowedUpdates = [
       'name',
-      'email',
+
       'address',
       'planType',
       'preferences',

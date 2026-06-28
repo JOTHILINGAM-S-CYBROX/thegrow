@@ -52,7 +52,7 @@ export async function POST(request) {
 
     // 2. Parse form data
     const formData = await request.formData();
-    const planType = formData.get('planType'); // 'BASIC' (Saver) or 'PREMIUM' (Elite)
+    const planType = 'MEMBERSHIP';
     const name = formData.get('name');
     const dobString = formData.get('dob'); // e.g. '1995-04-12' or '12/04/1995'
     const aadhaarLastFour = formData.get('aadhaarLastFour');
@@ -60,9 +60,9 @@ export async function POST(request) {
     const paymentStatus = formData.get('paymentStatus') || 'PAID';
     const paymentMethod = formData.get('paymentMethod') || 'ONLINE';
 
-    if (!planType || !name || !dobString || !aadhaarLastFour || !file) {
+    if (!name || !dobString || !aadhaarLastFour || !file) {
       return NextResponse.json(
-        { success: false, message: 'All fields (planType, name, dob, aadhaarLastFour, file) are required.' },
+        { success: false, message: 'All fields (name, dob, aadhaarLastFour, file) are required.' },
         { status: 400 }
       );
     }
@@ -163,11 +163,11 @@ export async function POST(request) {
       } else {
         // Set defaults if plan document is missing
         planFeatures = {
-          maxOrdersPerMonth: planType === 'PREMIUM' ? 20 : 10,
-          maxBookingsPerMonth: planType === 'PREMIUM' ? 5 : 2,
-          discountPercentage: planType === 'PREMIUM' ? 15 : 10,
-          priorityLevel: planType === 'PREMIUM' ? 'VIP' : 'PRIORITY',
-          freeDelivery: planType === 'PREMIUM',
+          maxOrdersPerMonth: 20,
+          maxBookingsPerMonth: 5,
+          discountPercentage: 15,
+          priorityLevel: 'VIP',
+          freeDelivery: true,
         };
       }
 

@@ -31,7 +31,7 @@ export async function GET(request) {
     // Build query filter
     const filter = {};
     if (status) {
-      filter.status = status;
+      filter.paymentStatus = status;
     }
     if (customerPhone) {
       filter['customerInfo.phone'] = customerPhone;
@@ -90,6 +90,16 @@ export async function POST(request) {
           success: false,
           error:
             'Missing required fields: eventName, eventType, guestCount, eventDate',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (body.venue === 'Roof Top' && parseInt(body.guestCount, 10) > 50) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Roof Top venue has a maximum capacity of 50 guests.',
         },
         { status: 400 }
       );
@@ -178,7 +188,6 @@ export async function POST(request) {
     await createOrUpdateCustomerPlan({
       phone: customerPhone,
       name: body.customerInfo.name || 'Customer',
-      email: body.customerInfo.email,
       address: body.customerInfo.address,
     });
 

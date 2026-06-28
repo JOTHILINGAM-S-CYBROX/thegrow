@@ -55,7 +55,8 @@ export default function Page() {
   const [quantities, setQuantities] = useState({});
   const [showAddedMessage, setShowAddedMessage] = useState(null);
   const [subCategory, setSubCategory] = useState(null);
-  const { items, loading, pagination } = useMenu(page, 100, subCategory);
+  const [menuType, setMenuType] = useState('FOOD');
+  const { items, loading, pagination } = useMenu(page, 100, subCategory, menuType);
   const { addToCart } = useCart();
 
   if (!settings.loading && !settings.foodOrderingEnabled) {
@@ -77,6 +78,12 @@ export default function Page() {
 
   const handleSubCategoryChange = (newSubCategory) => {
     setSubCategory(newSubCategory === subCategory ? null : newSubCategory);
+    setPage(1);
+  };
+
+  const handleMenuTypeChange = (type) => {
+    setMenuType(type);
+    setSubCategory(null);
     setPage(1);
   };
 
@@ -112,6 +119,35 @@ export default function Page() {
           style={{ top: `${headerHeight}px` }}
         >
           <div className="w-full max-w-screen-xl mx-auto px-4 md:px-8">
+            
+            {/* Top Level Menu Toggle */}
+            <div className="flex justify-center mb-6">
+              <div className="bg-surface-container-low p-1 rounded-full inline-flex shadow-inner border border-outline-variant/20">
+                <button
+                  onClick={() => handleMenuTypeChange('FOOD')}
+                  className={`px-8 py-3 rounded-full font-label text-xs uppercase tracking-[0.2em] transition-all duration-300 flex items-center gap-2 ${
+                    menuType === 'FOOD' 
+                      ? 'bg-primary text-on-primary shadow-md font-bold' 
+                      : 'text-on-surface-variant hover:text-primary font-semibold'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-lg">restaurant</span>
+                  Restaurant Menu
+                </button>
+                <button
+                  onClick={() => handleMenuTypeChange('BAR')}
+                  className={`px-8 py-3 rounded-full font-label text-xs uppercase tracking-[0.2em] transition-all duration-300 flex items-center gap-2 ${
+                    menuType === 'BAR' 
+                      ? 'bg-primary text-on-primary shadow-md font-bold' 
+                      : 'text-on-surface-variant hover:text-primary font-semibold'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-lg">local_bar</span>
+                  Bar Menu
+                </button>
+              </div>
+            </div>
+
             <div className="flex items-center gap-6 overflow-x-auto no-scrollbar w-full">
               <button 
                 onClick={() => handleSubCategoryChange(null)}
@@ -121,38 +157,88 @@ export default function Page() {
                     : 'text-on-surface-variant border-transparent hover:text-primary'
                 }`}
               >
-                All Dishes
+                {menuType === 'FOOD' ? 'All Dishes' : 'All Drinks'}
               </button>
-              <button 
-                onClick={() => handleSubCategoryChange('Signature')}
-                className={`whitespace-nowrap font-serif italic text-xl pb-1 border-b-2 transition-colors ${
-                  subCategory === 'Signature'
-                    ? 'text-primary border-primary'
-                    : 'text-on-surface-variant border-transparent hover:text-primary'
-                }`}
-              >
-                Signature
-              </button>
-              <button 
-                onClick={() => handleSubCategoryChange('Continental')}
-                className={`whitespace-nowrap font-serif italic text-xl pb-1 border-b-2 transition-colors ${
-                  subCategory === 'Continental'
-                    ? 'text-primary border-primary'
-                    : 'text-on-surface-variant border-transparent hover:text-primary'
-                }`}
-              >
-                Continental
-              </button>
-              <button 
-                onClick={() => handleSubCategoryChange('Asian')}
-                className={`whitespace-nowrap font-serif italic text-xl pb-1 border-b-2 transition-colors ${
-                  subCategory === 'Asian'
-                    ? 'text-primary border-primary'
-                    : 'text-on-surface-variant border-transparent hover:text-primary'
-                }`}
-              >
-                Asian
-              </button>
+
+              {menuType === 'FOOD' && (
+                <>
+                  <button 
+                    onClick={() => handleSubCategoryChange('Signature')}
+                    className={`whitespace-nowrap font-serif italic text-xl pb-1 border-b-2 transition-colors ${
+                      subCategory === 'Signature'
+                        ? 'text-primary border-primary'
+                        : 'text-on-surface-variant border-transparent hover:text-primary'
+                    }`}
+                  >
+                    Signature
+                  </button>
+                  <button 
+                    onClick={() => handleSubCategoryChange('Continental')}
+                    className={`whitespace-nowrap font-serif italic text-xl pb-1 border-b-2 transition-colors ${
+                      subCategory === 'Continental'
+                        ? 'text-primary border-primary'
+                        : 'text-on-surface-variant border-transparent hover:text-primary'
+                    }`}
+                  >
+                    Continental
+                  </button>
+                  <button 
+                    onClick={() => handleSubCategoryChange('Asian')}
+                    className={`whitespace-nowrap font-serif italic text-xl pb-1 border-b-2 transition-colors ${
+                      subCategory === 'Asian'
+                        ? 'text-primary border-primary'
+                        : 'text-on-surface-variant border-transparent hover:text-primary'
+                    }`}
+                  >
+                    Asian
+                  </button>
+                </>
+              )}
+
+              {menuType === 'BAR' && (
+                <>
+                  <button 
+                    onClick={() => handleSubCategoryChange('Beer')}
+                    className={`whitespace-nowrap font-serif italic text-xl pb-1 border-b-2 transition-colors ${
+                      subCategory === 'Beer'
+                        ? 'text-primary border-primary'
+                        : 'text-on-surface-variant border-transparent hover:text-primary'
+                    }`}
+                  >
+                    Beer
+                  </button>
+                  <button 
+                    onClick={() => handleSubCategoryChange('Wine')}
+                    className={`whitespace-nowrap font-serif italic text-xl pb-1 border-b-2 transition-colors ${
+                      subCategory === 'Wine'
+                        ? 'text-primary border-primary'
+                        : 'text-on-surface-variant border-transparent hover:text-primary'
+                    }`}
+                  >
+                    Wine
+                  </button>
+                  <button 
+                    onClick={() => handleSubCategoryChange('Cocktails')}
+                    className={`whitespace-nowrap font-serif italic text-xl pb-1 border-b-2 transition-colors ${
+                      subCategory === 'Cocktails'
+                        ? 'text-primary border-primary'
+                        : 'text-on-surface-variant border-transparent hover:text-primary'
+                    }`}
+                  >
+                    Cocktails
+                  </button>
+                  <button 
+                    onClick={() => handleSubCategoryChange('Spirits')}
+                    className={`whitespace-nowrap font-serif italic text-xl pb-1 border-b-2 transition-colors ${
+                      subCategory === 'Spirits'
+                        ? 'text-primary border-primary'
+                        : 'text-on-surface-variant border-transparent hover:text-primary'
+                    }`}
+                  >
+                    Spirits
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -176,37 +262,33 @@ export default function Page() {
           {loading && <div className="text-center py-12 text-stone-500">Loading menu items...</div>}
           <div className="flex flex-col gap-6 w-full">
             {items.map((item) => (
-              <div key={item._id} className="flex flex-col md:flex-row items-stretch gap-4 md:gap-6 bg-surface-container-low p-4 md:p-5 rounded-2xl hover:bg-surface-container transition-all group shadow-sm border border-outline-variant/10 w-full max-w-full box-border">
+              <div key={item._id} className="flex flex-col items-stretch gap-3 bg-surface-container-low p-4 md:p-6 rounded-2xl hover:bg-surface-container transition-all duration-300 group shadow-sm hover:shadow-md border border-outline-variant/15 w-full max-w-full box-border relative overflow-hidden">
                 
-                {/* Image */}
-                {item.imageUrl && (
-                  <div className="w-full md:w-48 aspect-[4/3] md:aspect-auto md:h-auto flex-shrink-0 overflow-hidden rounded-xl relative">
-                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                  </div>
-                )}
+                {/* Decorative Accent */}
+                <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-500"></div>
 
                 {/* Content */}
-                <div className="flex-grow flex flex-col justify-between w-full py-1">
+                <div className="flex-grow flex flex-col justify-between w-full z-10">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-xl md:text-2xl font-serif italic text-primary leading-tight">{item.name}</h3>
-                      <div className="flex gap-1 items-center shrink-0">
+                      <h3 className="text-xl md:text-2xl font-serif italic text-primary leading-tight tracking-wide">{item.name}</h3>
+                      <div className="flex gap-2 items-center shrink-0">
                         {item.isVeg ? (
-                          <span className="inline-flex items-center justify-center w-5 h-5 rounded border border-green-600 bg-green-50 shrink-0">
+                          <span className="inline-flex items-center justify-center w-5 h-5 rounded border border-green-600 bg-green-50 shrink-0" title="Vegetarian">
                             <span className="w-2 h-2 rounded-full bg-green-600"></span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center justify-center w-5 h-5 rounded border border-red-600 bg-red-50 shrink-0">
+                          <span className="inline-flex items-center justify-center w-5 h-5 rounded border border-red-600 bg-red-50 shrink-0" title="Non-Vegetarian">
                             <span className="w-1.5 h-3 border-r-2 border-b-2 border-red-600 rotate-45"></span>
                           </span>
                         )}
                         {item.isSpicy && (
-                          <span className="text-sm">🌶️</span>
+                          <span className="text-sm" title="Spicy">🌶️</span>
                         )}
                       </div>
                     </div>
-                    <p className="text-sm font-body text-on-surface-variant leading-relaxed mb-3">{item.description}</p>
-                    <span className="block text-lg font-label font-semibold text-tertiary mb-4">₹{item.price}</span>
+                    <p className="text-sm font-body text-on-surface-variant leading-relaxed mb-3 max-w-2xl">{item.description}</p>
+                    <span className="block text-lg font-label font-bold text-tertiary mb-4">₹{item.price}</span>
                   </div>
                   
                   {/* Actions */}

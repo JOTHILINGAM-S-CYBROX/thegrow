@@ -16,6 +16,7 @@ export default function AdminMenuPage() {
     price: '',
     category: 'Main Course',
     subCategory: 'Continental',
+    menuType: 'FOOD',
     imageUrl: '',
     isVeg: true,
     isSpicy: false,
@@ -24,12 +25,13 @@ export default function AdminMenuPage() {
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const { items, loading, error, pagination, refetch } = useMenu(page, 20, category);
+  const [menuTypeFilter, setMenuTypeFilter] = useState('FOOD');
+  const { items, loading, error, pagination, refetch } = useMenu(page, 20, category, menuTypeFilter);
   const { showPill } = useStatusPill();
   const [itemToDelete, setItemToDelete] = useState(null);
 
   const categories = ['Soup', 'Appetizer', 'Main Course', 'Dessert', 'Drinks'];
-  const subCategories = ['Indian', 'Continental', 'Asian'];
+  const subCategories = ['Signature', 'Indian', 'Continental', 'Asian', 'Beer', 'Wine', 'Cocktails', 'Spirits'];
 
   const handleCategoryFilter = (newCategory) => {
     setCategory(newCategory === 'all' ? null : newCategory);
@@ -65,6 +67,7 @@ export default function AdminMenuPage() {
           price: '',
           category: 'Main Course',
           subCategory: 'Continental',
+          menuType: 'FOOD',
           imageUrl: '',
           isVeg: true,
           isSpicy: false,
@@ -135,6 +138,22 @@ export default function AdminMenuPage() {
           )}
 
           <form onSubmit={handleAddMenuItem} className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-stone-700 mb-2">Menu Type *</label>
+                <select
+                  name="menuType"
+                  value={formData.menuType}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-4 py-3 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="FOOD">Food (Restaurant)</option>
+                  <option value="BAR">Bar (Drinks/Liquors)</option>
+                </select>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-stone-700 mb-2">Item Name *</label>
@@ -265,8 +284,34 @@ export default function AdminMenuPage() {
         </div>
       )}
 
-      {/* Category Filter */}
-      <div className="mb-6 bg-white rounded-lg shadow-sm border border-stone-100 p-4">
+      {/* Menu Type & Category Filter */}
+      <div className="mb-6 bg-white rounded-lg shadow-sm border border-stone-100 p-4 space-y-4">
+        
+        {/* Top-Level Menu Type Filter */}
+        <div className="flex gap-2 border-b border-stone-100 pb-4">
+          <button
+            onClick={() => { setMenuTypeFilter('FOOD'); setCategory(null); setPage(1); }}
+            className={`px-6 py-2 rounded-lg font-semibold transition ${
+              menuTypeFilter === 'FOOD'
+                ? 'bg-primary text-white shadow-sm'
+                : 'bg-stone-200 text-stone-800 hover:bg-stone-300'
+            }`}
+          >
+            Restaurant Menu (Food)
+          </button>
+          <button
+            onClick={() => { setMenuTypeFilter('BAR'); setCategory(null); setPage(1); }}
+            className={`px-6 py-2 rounded-lg font-semibold transition ${
+              menuTypeFilter === 'BAR'
+                ? 'bg-primary text-white shadow-sm'
+                : 'bg-stone-200 text-stone-800 hover:bg-stone-300'
+            }`}
+          >
+            Bar Menu (Drinks)
+          </button>
+        </div>
+
+        {/* Category Filter */}
         <div className="grid grid-cols-3 md:flex md:flex-wrap gap-2">
           <button
             onClick={() => handleCategoryFilter('all')}
@@ -351,6 +396,11 @@ export default function AdminMenuPage() {
                 </div>
 
                 <div className="flex gap-2 mb-3 flex-wrap">
+                  <span className={`text-xs font-label px-2 py-1 rounded-full ${
+                    item.menuType === 'BAR' ? 'bg-indigo-100 text-indigo-700' : 'bg-orange-100 text-orange-700'
+                  }`}>
+                    {item.menuType === 'BAR' ? 'BAR' : 'FOOD'}
+                  </span>
                   <span className="text-xs font-label bg-stone-100 text-stone-700 px-2 py-1 rounded-full">
                     {item.category}
                   </span>

@@ -101,7 +101,6 @@ export default function Page() {
   
   const [partySize, setPartySize] = useState(2);
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -313,11 +312,7 @@ export default function Page() {
                         <input value={name} onChange={e => setName(e.target.value)} required className="w-full bg-transparent border-0 border-b border-outline focus:ring-0 focus:border-primary py-3 px-0 text-lg" placeholder="Jane Doe" type="text" />
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                      <div>
-                        <label className="block text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Email Address</label>
-                        <input value={email} onChange={e => setEmail(e.target.value)} required className="w-full bg-transparent border-0 border-b border-outline focus:ring-0 focus:border-primary py-3 px-0 text-lg" placeholder="jane@example.com" type="email" />
-                      </div>
+                    <div className="grid grid-cols-1 gap-8 mb-8">
                       <div>
                         <label className="block text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Phone Number</label>
                         <input value={phone} onChange={e => setPhone(e.target.value)} required className="w-full bg-transparent border-0 border-b border-outline focus:ring-0 focus:border-primary py-3 px-0 text-lg" placeholder="+91 98765 43210" type="tel" />
@@ -341,40 +336,14 @@ export default function Page() {
                     <span className="material-symbols-outlined text-6xl text-emerald-600 mb-6">check_circle</span>
                     <h2 className="text-3xl font-serif text-emerald-900 mb-4 italic">Reservation Confirmed</h2>
                     <p className="text-emerald-800 leading-relaxed mb-8 max-w-md mx-auto">
-                      Thank you, {name}. Your table for {partySize} on {monthNames[selectedMonth]} {selectedDate}, {selectedYear} at {selectedTime} has been reserved. A confirmation email has been sent to {email}.
+                      Thank you, {name}. Your table for {partySize} on {monthNames[selectedMonth]} {selectedDate}, {selectedYear} at {selectedTime} has been reserved. We look forward to hosting you!
                     </p>
-                    <button onClick={() => { setStep(1); setName(''); setEmail(''); setPhone(''); setSpecialRequests(''); setPartySize(2); }} className="text-sm font-label uppercase tracking-widest text-emerald-700 hover:text-emerald-900 underline underline-offset-4 transition-colors" type="button">
+                    <button onClick={() => { setStep(1); setName(''); setPhone(''); setSpecialRequests(''); setPartySize(2); }} className="text-sm font-label uppercase tracking-widest text-emerald-700 hover:text-emerald-900 underline underline-offset-4 transition-colors" type="button">
                       Make Another Reservation
                     </button>
                   </div>
                 )}
 
-                <section className="bg-surface-container-low p-8 rounded-xl space-y-8 mt-16">
-                  <h3 className="text-xs font-label uppercase tracking-widest text-primary font-bold">Know Before You Go</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`  text-sm  material-symbols-outlined ${styles.materialSymbolsOutlined}`}>local_parking</span>
-                        <span className="text-sm font-bold">Parking</span>
-                      </div>
-                      <p className="text-xs leading-relaxed text-on-surface-variant">Valet parking is available at the main entrance. Complimentary for dining guests.</p>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`  text-sm  material-symbols-outlined ${styles.materialSymbolsOutlined}`}>apparel</span>
-                        <span className="text-sm font-bold">Attire</span>
-                      </div>
-                      <p className="text-xs leading-relaxed text-on-surface-variant">Smart casual. We kindly request no athletic wear or beachwear after 7 PM.</p>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`  text-sm  material-symbols-outlined ${styles.materialSymbolsOutlined}`}>verified</span>
-                        <span className="text-sm font-bold">Service</span>
-                      </div>
-                      <p className="text-xs leading-relaxed text-on-surface-variant">A 10% discretionary service charge will be added to your final bill.</p>
-                    </div>
-                  </div>
-                </section>
               </form>
             </div>
           </section>
@@ -394,8 +363,7 @@ export default function Page() {
           </div>
           <div>
             <h4 className="font-sans text-sm tracking-widest uppercase mb-6 text-stone-50">Opening Hours</h4>
-            <p className="text-stone-400 text-sm mb-2">Mon - Thu: 12:00 - 23:00</p>
-            <p className="text-stone-400 text-sm">Fri - Sun: 11:00 - 00:00</p>
+            <p className="text-stone-400 text-sm">Open Daily 11 AM - 11 PM</p>
           </div>
           <div>
             <h4 className="font-sans text-sm tracking-widest uppercase mb-6 text-stone-50">Socials</h4>

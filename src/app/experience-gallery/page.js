@@ -149,9 +149,7 @@ export default function Page() {
             </div>
             <div className="flex flex-col gap-4">
               <span className="font-sans text-sm tracking-widest uppercase text-stone-50 font-bold">Opening Hours</span>
-              <p className="text-stone-400">Tue - Fri: 12 PM - 11 PM</p>
-              <p className="text-stone-400">Sat - Sun: 11 AM - 12 AM</p>
-              <p className="text-stone-500 italic mt-2">Monday: Closed for garden maintenance</p>
+              <p className="text-stone-400">Open Daily 11 AM - 11 PM</p>
             </div>
           </div>
         </div>
