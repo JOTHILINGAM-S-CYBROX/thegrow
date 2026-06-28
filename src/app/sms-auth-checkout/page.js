@@ -111,6 +111,7 @@ export default function SMSAuthCheckout() {
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items,
@@ -177,9 +178,7 @@ export default function SMSAuthCheckout() {
             <div className="space-y-3 md:space-y-6 max-h-[50vh] overflow-y-auto pr-2 no-scrollbar">
               {items.map((item) => (
                 <div key={item._id} className="flex items-center gap-3 md:gap-4 group">
-                  {item.imageUrl && (
-                    <img src={item.imageUrl} alt={item.name} className="w-14 h-14 md:w-24 md:h-24 object-cover rounded-xl md:rounded-2xl shadow-sm shrink-0" />
-                  )}
+                  {/* Item Image removed per request */}
                   <div className="flex-1 flex flex-col justify-center">
                     <h4 className="font-headline italic text-base md:text-[clamp(1.125rem,4vw,1.375rem)] text-stone-850 group-hover:text-primary transition-colors leading-tight mb-0.5">{item.name}</h4>
                     <div className="flex justify-between items-end">

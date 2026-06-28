@@ -31,7 +31,7 @@ export async function GET(request) {
     // Build query filter
     const filter = {};
     if (status) {
-      filter.status = status;
+      filter.paymentStatus = status;
     }
     if (customerPhone) {
       filter['customerInfo.phone'] = customerPhone;

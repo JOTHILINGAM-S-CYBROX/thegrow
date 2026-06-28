@@ -111,7 +111,7 @@ const VenueBookingSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ['Pending', 'Advance Paid', 'Fully Paid', 'Failed', 'Completed'],
+    enum: ['Pending', 'Confirmed', 'Advance Paid', 'Fully Paid', 'Failed', 'Completed', 'Cancelled'],
     default: 'Pending',
   },
   advanceAmount: {

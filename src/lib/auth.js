@@ -18,7 +18,7 @@ export function generateToken(phone) {
   }
   
   return jwt.sign(
-    { phone, iat: Date.now() },
+    { phone },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRY }
   );
@@ -55,14 +55,29 @@ export function getTokenFromRequest(request) {
     return authHeader.substring(7);
   }
 
-  // Check cookies
-  const cookie = request.headers.get('Cookie');
-  if (cookie) {
-    const tokens = cookie.split(';').map(c => c.trim());
+  // Check cookies via Next.js request.cookies API if available
+  if (typeof request.cookies?.get === 'function') {
+    const userToken = request.cookies.get('userToken');
+    if (userToken) return userToken.value || userToken;
+  }
+
+  // Check cookies from header (fallback)
+  const cookieStr = request.headers.get('cookie') || request.headers.get('Cookie');
+  if (cookieStr) {
+    const tokens = cookieStr.split(';').map(c => c.trim());
     const userTokenCookie = tokens.find(c => c.startsWith('userToken='));
     if (userTokenCookie) {
       return userTokenCookie.split('=')[1];
     }
+  }
+
+  console.log('DEBUG getTokenFromRequest - No token found.');
+  if (request.headers && typeof request.headers.get === 'function') {
+    console.log('cookie header:', request.headers.get('cookie'));
+    console.log('Cookie header:', request.headers.get('Cookie'));
+  }
+  if (request.cookies) {
+    console.log('request.cookies:', request.cookies.getAll ? request.cookies.getAll() : 'no getAll');
   }
 
   return null;
